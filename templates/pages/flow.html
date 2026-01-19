@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}User Flow - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Your Career Discovery Journey</h2>
+    <p>User ID: <strong>{{ user_id }}</strong></p>
+    <div class="alert alert-info">
+        This is a simplified UI flow. For full functionality, use the <a href="/api/v1/docs">API Documentation</a>.
+    </div>
+</div>
+
+<div class="card">
+    <h3>Step 1: Select Your Current Occupation</h3>
+    <p>Search for your current job title:</p>
+    <input type="text" id="searchQuery" placeholder="e.g., Software Developer" style="width: 300px; padding: 8px; margin-right: 10px;">
+    <button class="btn" onclick="searchOccupations()">Search</button>
+
+    <div id="searchResults" style="margin-top: 20px;"></div>
+</div>
+
+<div class="card" id="skillsSection" style="display: none;">
+    <h3>Step 2: Rate Your Skills</h3>
+    <p>Rate your proficiency in these key skills (0=None, 1=Basic, 2=Intermediate, 3=Advanced, 4=Expert):</p>
+    <div id="skillsList"></div>
+    <button class="btn btn-success" onclick="submitRatings()" style="margin-top: 20px;">Submit Ratings</button>
+</div>
+
+<div class="card" id="recommendationsSection" style="display: none;">
+    <h3>Step 3: Your Recommendations</h3>
+    <button class="btn" onclick="getRecommendations()">Get My Recommendations</button>
+    <div id="recommendationsResults" style="margin-top: 20px;"></div>
+</div>
+
+<script>
+    const userId = {{ user_id }};
+    let currentOccupation = null;
+    let skills = [];
+
+    async function searchOccupations() {
+        const query = document.getElementById('searchQuery').value;
+        if (!query) {
+            alert('Please enter a search query');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/occupations/search?q=${encodeURIComponent(query)}`);
+            const results = await response.json();
+
+            const resultsDiv = document.getElementById('searchResults');
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p>No results found. Try a different search term.</p>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<h4>Select your occupation:</h4>';
+            const list = document.createElement('ul');
+            list.style.listStyle = 'none';
+            list.style.padding = '0';
+
+            results.forEach(occ => {
+                const li = document.createElement('li');
+                li.style.padding = '10px';
+                li.style.margin = '5px 0';
+                li.style.background = '#ecf0f1';
+                li.style.borderRadius = '4px';
+                li.style.cursor = 'pointer';
+                li.innerHTML = `<strong>${occ.title}</strong> <small>(${occ.code})</small>`;
+                li.onclick = () => selectOccupation(occ.code, occ.title);
+                list.appendChild(li);
+            });
+
+            resultsDiv.appendChild(list);
+        } catch (error) {
+            alert('Error searching: ' + error.message);
+        }
+    }
+
+    async function selectOccupation(code, title) {
+        try {
+            // Set current occupation
+            const response = await fetch(`/api/v1/user/${userId}/current-occupation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ onet_code: code })
+            });
+
+            if (!response.ok) throw new Error('Failed to set occupation');
+
+            currentOccupation = code;
+            alert(`Selected: ${title}`);
+
+            // Fetch skills for this occupation
+            const skillsResponse = await fetch(`/api/v1/occupations/${code}/skills`);
+            const data = await skillsResponse.json();
+            skills = data.skills;
+
+            displaySkills();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    function displaySkills() {
+        const skillsSection = document.getElementById('skillsSection');
+        const skillsList = document.getElementById('skillsList');
+
+        // Show top 15 skills
+        const topSkills = skills.slice(0, 15);
+
+        skillsList.innerHTML = '';
+        topSkills.forEach(skill => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '15px';
+            div.innerHTML = `
+                <label style="display: block; margin-bottom: 5px;">
+                    <strong>${skill.skill_name}</strong>
+                    ${skill.importance ? `(Importance: ${skill.importance.toFixed(0)})` : ''}
+                </label>
+                <input type="range" min="0" max="4" value="2"
+                       id="skill_${skill.element_id}"
+                       style="width: 200px; margin-right: 10px;">
+                <span id="value_${skill.element_id}">2</span>
+            `;
+            skillsList.appendChild(div);
+
+            // Update display value
+            const slider = div.querySelector('input[type="range"]');
+            const valueSpan = div.querySelector('span');
+            slider.oninput = function() {
+                valueSpan.textContent = this.value;
+            };
+        });
+
+        skillsSection.style.display = 'block';
+    }
+
+    async function submitRatings() {
+        const ratings = skills.slice(0, 15).map(skill => ({
+            element_id: skill.element_id,
+            rating_0_4: parseInt(document.getElementById(`skill_${skill.element_id}`).value)
+        }));
+
+        try {
+            const response = await fetch(`/api/v1/user/${userId}/skills/ratings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ratings })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit ratings');
+
+            alert('Skills rated successfully!');
+            document.getElementById('recommendationsSection').style.display = 'block';
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    async function getRecommendations() {
+        try {
+            const response = await fetch(`/api/v1/user/${userId}/recommendations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ limit_per_bucket: 5 })
+            });
+
+            if (!response.ok) throw new Error('Failed to get recommendations');
+
+            const data = await response.json();
+            displayRecommendations(data);
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    function displayRecommendations(data) {
+        const resultsDiv = document.getElementById('recommendationsResults');
+        resultsDiv.innerHTML = `
+            <div class="alert alert-success">
+                <strong>Current Occupation:</strong> ${data.current_occupation.title}<br>
+                <strong>Model Version:</strong> ${data.model_version}<br>
+                <strong>Total Recommendations:</strong> ${data.total_recommendations}
+            </div>
+            <div class="alert alert-info">
+                <strong>Decision Guidance:</strong> ${data.decision_guidance}
+            </div>
+        `;
+
+        data.buckets.forEach(bucket => {
+            const bucketDiv = document.createElement('div');
+            bucketDiv.style.marginTop = '20px';
+            bucketDiv.innerHTML = `<h4>${bucket.bucket_label}</h4><p>${bucket.description}</p>`;
+
+            bucket.occupations.forEach(occ => {
+                const occDiv = document.createElement('div');
+                occDiv.style.padding = '15px';
+                occDiv.style.margin = '10px 0';
+                occDiv.style.background = '#ecf0f1';
+                occDiv.style.borderRadius = '4px';
+
+                const topGaps = occ.top_gaps.slice(0, 3).map(g => g.skill_name).join(', ');
+
+                occDiv.innerHTML = `
+                    <strong>${occ.title}</strong> (Match: ${occ.match_score.toFixed(0)}%, Gap: ${occ.gap_severity.toFixed(0)}%)<br>
+                    <small>${occ.explanation}</small><br>
+                    <small><strong>Top gaps:</strong> ${topGaps}</small><br>
+                    <small><strong>Training:</strong> ${occ.training_suggestion}</small>
+                `;
+
+                bucketDiv.appendChild(occDiv);
+            });
+
+            resultsDiv.appendChild(bucketDiv);
+        });
+    }
+</script>
+{% endblock %}

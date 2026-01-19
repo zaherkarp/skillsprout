@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Documentation</h2>
+    <p>Learn how to use SkillSprout and understand its architecture.</p>
+</div>
+
+<div class="card">
+    <h3>Quick Start</h3>
+    <ol style="line-height: 2;">
+        <li>Set up environment variables (copy .env.example to .env)</li>
+        <li>Run database migrations: <code>alembic upgrade head</code></li>
+        <li>Warm the occupation cache: <code>python scripts/seed_demo.py</code></li>
+        <li>Start the API server: <code>uvicorn app.main:app --reload</code></li>
+        <li>Start Celery worker: <code>celery -A app.tasks.celery_app worker --loglevel=info</code></li>
+    </ol>
+</div>
+
+<div class="card">
+    <h3>API Workflow</h3>
+    <p><strong>1. Create a user profile:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+POST /api/v1/user/profile
+{}</pre>
+
+    <p><strong>2. Search for occupations:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+GET /api/v1/occupations/search?q=software</pre>
+
+    <p><strong>3. Set current occupation:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+POST /api/v1/user/{user_id}/current-occupation
+{
+  "onet_code": "15-1252.00"
+}</pre>
+
+    <p><strong>4. Get occupation skills:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+GET /api/v1/occupations/15-1252.00/skills</pre>
+
+    <p><strong>5. Rate your skills:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+POST /api/v1/user/{user_id}/skills/ratings
+{
+  "ratings": [
+    {"element_id": "2.B.1.a", "rating_0_4": 3},
+    {"element_id": "2.B.8.a", "rating_0_4": 4}
+  ]
+}</pre>
+
+    <p><strong>6. Get recommendations:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+POST /api/v1/user/{user_id}/recommendations
+{
+  "limit_per_bucket": 10,
+  "use_calibration": false,
+  "enable_exploration": false
+}</pre>
+
+    <p><strong>7. Submit feedback:</strong></p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+POST /api/v1/feedback
+{
+  "event_id": 1,
+  "target_onet_code": "15-1299.08",
+  "action_type": "click"
+}</pre>
+</div>
+
+<div class="card">
+    <h3>Architecture Overview</h3>
+    <ul style="line-height: 2;">
+        <li><strong>FastAPI:</strong> RESTful API server with async support</li>
+        <li><strong>PostgreSQL:</strong> Persistent storage for users, occupations, skills, recommendations, feedback</li>
+        <li><strong>SQLAlchemy 2.0:</strong> ORM with async support</li>
+        <li><strong>Alembic:</strong> Database migrations</li>
+        <li><strong>Redis + Celery:</strong> Background tasks (cache warming, model training)</li>
+        <li><strong>O*NET Web Services:</strong> Occupation and skill data source</li>
+        <li><strong>scikit-learn:</strong> Calibration model training</li>
+    </ul>
+</div>
+
+<div class="card">
+    <h3>Modeling Strategy</h3>
+    <p><strong>Model v1 - Baseline (Current):</strong></p>
+    <ul style="margin-left: 20px; line-height: 2;">
+        <li>Deterministic scoring based on skill matching</li>
+        <li>Match score: Weighted overlap between user skills and job requirements</li>
+        <li>Gap severity: Weighted importance of missing skills</li>
+        <li>Bucket assignment: READY_NOW, TRAINABLE, LONG_RESKILL</li>
+    </ul>
+
+    <p><strong>Model v2 - Calibrated (Framework Ready):</strong></p>
+    <ul style="margin-left: 20px; line-height: 2;">
+        <li>Logistic regression trained on user feedback</li>
+        <li>Features: match_score, gap_severity, job_zone_diff, skill gaps, user confidence</li>
+        <li>Labels derived from feedback: interview/offer (positive), hide (negative)</li>
+        <li>Epsilon-greedy exploration for online learning</li>
+    </ul>
+
+    <p style="margin-top: 20px;">See <strong>MODELING_NOTES.md</strong> for detailed formulas and thresholds.</p>
+</div>
+
+<div class="card">
+    <h3>Background Tasks</h3>
+    <p><strong>Cache Warming:</strong> Fetch and cache occupation skills from O*NET</p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+celery -A app.tasks.celery_app call app.tasks.tasks.warm_occupation_cache</pre>
+
+    <p><strong>Model Training:</strong> Train calibration model from feedback (runs daily at 2 AM)</p>
+    <pre style="background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 4px; overflow-x: auto;">
+celery -A app.tasks.celery_app call app.tasks.tasks.train_calibration_model_task</pre>
+</div>
+
+<div class="card">
+    <h3>Links</h3>
+    <ul style="line-height: 2;">
+        <li><a href="/">Home</a></li>
+        <li><a href="/api/v1/docs">Interactive API Documentation (Swagger)</a></li>
+        <li><a href="/api/v1/redoc">API Documentation (ReDoc)</a></li>
+        <li><a href="/api/v1/health">Health Check</a></li>
+        <li><a href="/api/v1/model/status">Model Status</a></li>
+    </ul>
+</div>
+{% endblock %}
