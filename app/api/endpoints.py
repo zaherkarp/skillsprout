@@ -220,6 +220,12 @@ async def get_occupation_skills(
 
         await db.commit()
 
+        # Expire the cached occupation so the re-fetch below loads fresh
+        # relationship data.  The session uses expire_on_commit=False, so
+        # without this the identity-map returns the stale object whose
+        # occupation_skills list is still empty.
+        db.expire(occupation)
+
         # Fetch again with relationships
         result = await db.execute(
             select(Occupation)
