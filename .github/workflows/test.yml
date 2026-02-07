@@ -148,8 +148,8 @@ jobs:
 
       - name: Build and run integration tests
         run: |
-          docker-compose -f docker-compose.test.yml build
-          docker-compose -f docker-compose.test.yml up \
+          docker compose -f docker-compose.test.yml build
+          docker compose -f docker-compose.test.yml up \
             --abort-on-container-exit \
             --exit-code-from test-runner
 
@@ -170,7 +170,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker-compose -f docker-compose.test.yml down -v
+        run: docker compose -f docker-compose.test.yml down -v
 
   # E2E tests
   e2e-test:
@@ -184,7 +184,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker-compose up -d
+          docker compose up -d
           echo "Waiting for services to be healthy..."
           sleep 30
 
@@ -198,11 +198,11 @@ jobs:
 
       - name: Show API logs on failure
         if: failure()
-        run: docker-compose logs api
+        run: docker compose logs api
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
 
   # Build production image (only on main)
   build:
