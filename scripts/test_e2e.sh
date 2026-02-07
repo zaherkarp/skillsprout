@@ -24,15 +24,24 @@ echo -e "${NC}"
 echo "API URL: $API_URL"
 echo ""
 
-# Function to test endpoint
-test_endpoint() {
+# Helper: extract a JSON field using python3 (always available on ubuntu-latest)
+json_field() {
+    python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data$1))" 2>/dev/null | tr -d '"'
+}
+
+json_array_item() {
+    python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(data$1)" 2>/dev/null
+}
+
+# Function to call an endpoint, print status, and store the raw JSON body in $BODY
+call_endpoint() {
     local name="$1"
     local method="$2"
     local endpoint="$3"
     local data="$4"
     local expected_code="${5:-200}"
 
-    echo -n "Testing: $name... "
+    echo -n "  Testing: $name... "
 
     if [ "$method" == "GET" ]; then
         response=$(curl -s -w "\n%{http_code}" "$API_URL$endpoint")
@@ -44,16 +53,15 @@ test_endpoint() {
     fi
 
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n-1)
+    BODY=$(echo "$response" | sed '$d')
 
     if [ "$http_code" == "$expected_code" ]; then
         echo -e "${GREEN}✓${NC}"
         PASSED=$((PASSED + 1))
-        echo "$body"
         return 0
     else
         echo -e "${RED}✗ (Expected $expected_code, got $http_code)${NC}"
-        echo "Response: $body"
+        echo "  Response: $BODY"
         FAILED=$((FAILED + 1))
         return 1
     fi
@@ -82,36 +90,52 @@ echo -e "${BLUE}Running E2E Tests...${NC}"
 echo ""
 
 # 1. Health Check
-test_endpoint "Health Check" "GET" "/api/v1/health" "" 200 > /dev/null
+call_endpoint "Health Check" "GET" "/api/v1/health" "" 200
 
 # 2. Create User Profile
 echo -e "\n${YELLOW}Step 1: Create User Profile${NC}"
-user_response=$(test_endpoint "Create User" "POST" "/api/v1/user/profile" '{}' 201)
-user_id=$(echo "$user_response" | grep -o '"id":[0-9]*' | grep -o '[0-9]*')
+call_endpoint "Create User" "POST" "/api/v1/user/profile" '{}' 201
+user_id=$(echo "$BODY" | json_field '["id"]')
 echo "  User ID: $user_id"
+
+if [ -z "$user_id" ]; then
+    echo -e "${RED}Failed to extract user ID${NC}"
+    exit 1
+fi
 
 # 3. Search Occupations
 echo -e "\n${YELLOW}Step 2: Search Occupations${NC}"
-search_response=$(test_endpoint "Search Occupations" "GET" "/api/v1/occupations/search?q=software" "" 200)
-onet_code=$(echo "$search_response" | grep -o '"code":"[^"]*"' | head -1 | cut -d'"' -f4)
+call_endpoint "Search Occupations" "GET" "/api/v1/occupations/search?q=software" "" 200
+onet_code=$(echo "$BODY" | python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(data[0]['code'])" 2>/dev/null)
 echo "  O*NET Code: $onet_code"
+
+if [ -z "$onet_code" ]; then
+    echo -e "${RED}Failed to extract O*NET code${NC}"
+    exit 1
+fi
 
 # 4. Get Occupation Details
 echo -e "\n${YELLOW}Step 3: Get Occupation Details${NC}"
-test_endpoint "Get Occupation" "GET" "/api/v1/occupations/$onet_code" "" 200 > /dev/null
+call_endpoint "Get Occupation" "GET" "/api/v1/occupations/$onet_code" "" 200
 
 # 5. Get Occupation Skills
 echo -e "\n${YELLOW}Step 4: Get Occupation Skills${NC}"
-skills_response=$(test_endpoint "Get Skills" "GET" "/api/v1/occupations/$onet_code/skills" "" 200)
-skill1=$(echo "$skills_response" | grep -o '"element_id":"[^"]*"' | head -1 | cut -d'"' -f4)
-skill2=$(echo "$skills_response" | grep -o '"element_id":"[^"]*"' | sed -n '2p' | cut -d'"' -f4)
-skill3=$(echo "$skills_response" | grep -o '"element_id":"[^"]*"' | sed -n '3p' | cut -d'"' -f4)
+call_endpoint "Get Skills" "GET" "/api/v1/occupations/$onet_code/skills" "" 200
+skill1=$(echo "$BODY" | python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(data['skills'][0]['element_id'])" 2>/dev/null)
+skill2=$(echo "$BODY" | python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(data['skills'][1]['element_id'])" 2>/dev/null)
+skill3=$(echo "$BODY" | python3 -c "import sys,json; data=json.loads(sys.stdin.read()); print(data['skills'][2]['element_id'])" 2>/dev/null)
 echo "  Skills found: $skill1, $skill2, $skill3"
+
+if [ -z "$skill1" ] || [ -z "$skill2" ] || [ -z "$skill3" ]; then
+    echo -e "${RED}Failed to extract skill element IDs from response${NC}"
+    echo "  Response body: $BODY"
+    exit 1
+fi
 
 # 6. Set Current Occupation
 echo -e "\n${YELLOW}Step 5: Set Current Occupation${NC}"
-test_endpoint "Set Occupation" "POST" "/api/v1/user/$user_id/current-occupation" \
-    "{\"onet_code\": \"$onet_code\"}" 200 > /dev/null
+call_endpoint "Set Occupation" "POST" "/api/v1/user/$user_id/current-occupation" \
+    "{\"onet_code\": \"$onet_code\"}" 200
 
 # 7. Rate Skills
 echo -e "\n${YELLOW}Step 6: Rate Skills${NC}"
@@ -122,29 +146,38 @@ ratings_data="{
         {\"element_id\": \"$skill3\", \"rating_0_4\": 2}
     ]
 }"
-test_endpoint "Rate Skills" "POST" "/api/v1/user/$user_id/skills/ratings" \
-    "$ratings_data" 200 > /dev/null
+call_endpoint "Rate Skills" "POST" "/api/v1/user/$user_id/skills/ratings" \
+    "$ratings_data" 200
 
 # 8. Get Recommendations
 echo -e "\n${YELLOW}Step 7: Get Recommendations${NC}"
-rec_response=$(test_endpoint "Get Recommendations" "POST" "/api/v1/user/$user_id/recommendations" \
-    '{"limit_per_bucket": 5}' 200)
-event_id=$(echo "$rec_response" | grep -o '"event_id":[0-9]*' | grep -o '[0-9]*')
-target_code=$(echo "$rec_response" | grep -o '"onet_code":"[^"]*"' | sed -n '2p' | cut -d'"' -f4)
+call_endpoint "Get Recommendations" "POST" "/api/v1/user/$user_id/recommendations" \
+    '{"limit_per_bucket": 5}' 200
+event_id=$(echo "$BODY" | json_field '["event_id"]')
+target_code=$(echo "$BODY" | python3 -c "
+import sys,json
+data=json.loads(sys.stdin.read())
+for b in data.get('buckets',[]):
+    for o in b.get('occupations',[]):
+        if o['onet_code'] != '$onet_code':
+            print(o['onet_code'])
+            sys.exit(0)
+print('')
+" 2>/dev/null)
 echo "  Event ID: $event_id"
 echo "  Sample Recommendation: $target_code"
 
 # 9. Submit Feedback
 if [ -n "$target_code" ] && [ -n "$event_id" ]; then
     echo -e "\n${YELLOW}Step 8: Submit Feedback${NC}"
-    test_endpoint "Submit Feedback" "POST" "/api/v1/feedback" \
+    call_endpoint "Submit Feedback" "POST" "/api/v1/feedback" \
         "{\"event_id\": $event_id, \"target_onet_code\": \"$target_code\", \"action_type\": \"click\"}" \
-        201 > /dev/null
+        201
 fi
 
 # 10. Check Model Status
 echo -e "\n${YELLOW}Step 9: Check Model Status${NC}"
-test_endpoint "Model Status" "GET" "/api/v1/model/status" "" 200 > /dev/null
+call_endpoint "Model Status" "GET" "/api/v1/model/status" "" 200
 
 # Results
 echo ""
