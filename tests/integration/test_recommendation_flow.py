@@ -2,6 +2,9 @@
 import pytest
 from datetime import datetime
 
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+
 from app.models.models import (
     Occupation, Skill, OccupationSkill, UserProfile,
     UserCurrentOccupation, UserSkillRating, RecommendationEvent,
@@ -372,3 +375,74 @@ async def test_long_reskill_scenario(test_db):
     assert score.gap_severity > 40
     assert len(score.top_gaps) >= 2
     assert "significant" in score.training_suggestion.lower() or "long" in score.training_suggestion.lower()
+
+
+@pytest.mark.asyncio
+async def test_occupation_skills_loaded_after_separate_commit(test_db):
+    """Verify that occupation_skills are visible after being added in a
+    separate commit from the parent Occupation.
+
+    This reproduces the E2E bug where:
+    1. GET /occupations/{code} caches the Occupation (no skills)
+    2. GET /occupations/{code}/skills adds OccupationSkill rows & commits
+    3. Re-fetch with joinedload must return the newly created skills
+
+    With expire_on_commit=False the identity-map keeps stale state, so
+    the code must explicitly expire the occupation before re-fetching.
+    """
+    # Step 1 – create & commit occupation WITHOUT skills (simulates cache)
+    occupation = Occupation(
+        onet_code="15-1252.00",
+        title="Software Developers",
+        description="Test",
+        job_zone=4,
+        last_fetched_at=datetime.utcnow(),
+    )
+    test_db.add(occupation)
+    await test_db.commit()
+
+    # Step 2 – load the occupation (simulates the joinedload cache check)
+    result = await test_db.execute(
+        select(Occupation)
+        .options(
+            joinedload(Occupation.occupation_skills)
+            .joinedload(OccupationSkill.skill)
+        )
+        .where(Occupation.onet_code == "15-1252.00")
+    )
+    occupation = result.unique().scalar_one()
+    assert occupation.occupation_skills == []  # no skills yet
+
+    # Step 3 – add skills and occupation-skill links, then commit
+    skill = Skill(element_id="2.B.1.a", name="Reading Comprehension")
+    test_db.add(skill)
+    await test_db.flush()
+
+    occ_skill = OccupationSkill(
+        onet_code="15-1252.00",
+        element_id="2.B.1.a",
+        importance=72.0,
+        level=5.12,
+        last_fetched_at=datetime.utcnow(),
+    )
+    test_db.add(occ_skill)
+    await test_db.commit()
+
+    # Step 4 – expire stale state, then re-fetch with joinedload
+    test_db.expire(occupation)
+
+    result = await test_db.execute(
+        select(Occupation)
+        .options(
+            joinedload(Occupation.occupation_skills)
+            .joinedload(OccupationSkill.skill)
+        )
+        .where(Occupation.onet_code == "15-1252.00")
+    )
+    occupation = result.unique().scalar_one()
+
+    # The critical assertion: skills must now be populated
+    assert len(occupation.occupation_skills) == 1
+    assert occupation.occupation_skills[0].skill.element_id == "2.B.1.a"
+    assert occupation.occupation_skills[0].skill.name == "Reading Comprehension"
+    assert occupation.occupation_skills[0].importance == 72.0
