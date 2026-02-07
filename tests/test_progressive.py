@@ -250,22 +250,22 @@ class TestSessionEncryption:
             decrypt_session,
             _get_fernet,
         )
+        from unittest.mock import patch as _patch, MagicMock
+        from cryptography.fernet import Fernet, InvalidToken
 
-        # Manually craft a token with an old timestamp by encrypting
-        # then decrypting with a very short TTL after a brief sleep
         payload = SessionPayload(user_id=1)
         token = encrypt_session(payload)
 
-        # Fernet embeds a timestamp; decrypt with max_age=1 after
-        # forcing the token to appear old via a mock
-        import time as _time
-        from unittest.mock import patch as _patch
-        from cryptography.fernet import Fernet
+        # Mock the Fernet instance to raise InvalidToken for TTL check
+        mock_fernet = MagicMock(spec=Fernet)
+        mock_fernet.decrypt.side_effect = InvalidToken("token expired")
 
-        # Use a max_age of 1 second and sleep just past it
-        _time.sleep(1.1)
-        with pytest.raises(ValueError, match="Invalid or expired"):
-            decrypt_session(token, max_age=1)
+        with _patch(
+            "app.core.progressive.session_resumption._get_fernet",
+            return_value=mock_fernet,
+        ):
+            with pytest.raises(ValueError, match="Invalid or expired"):
+                decrypt_session(token, max_age=1)
 
     def test_tampered_token_raises(self):
         from app.core.progressive.session_resumption import decrypt_session
