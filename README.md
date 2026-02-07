@@ -42,10 +42,10 @@ A production-minded MVP web application that uses O*NET occupation skill data to
          │
     ┌────┴────┐
     │         │
-┌───▼──┐  ┌──▼──────┐
-│ DB   │  │ O*NET   │
-│(Postgres)│ │ API    │
-└──────┘  └─────────┘
+┌───▼──────┐  ┌──▼──────┐
+│ DB       │  │ O*NET   │
+│(Postgres)│  │ API     │
+└──────────┘  └─────────┘
     │
 ┌───▼──────────┐
 │ Celery Worker│  ← Cache warming, model training
