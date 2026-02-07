@@ -1,0 +1,169 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop, claude/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build test image
+        run: |
+          docker-compose -f docker-compose.test.yml build
+
+      - name: Run test suite
+        run: |
+          docker-compose -f docker-compose.test.yml up \
+            --abort-on-container-exit \
+            --exit-code-from test-runner
+
+      - name: Extract coverage report
+        if: always()
+        run: |
+          # Extract coverage from test container volume
+          CONTAINER_ID=$(docker create -v skillsprout_test_coverage:/data busybox)
+          docker cp $CONTAINER_ID:/data/. ./htmlcov/ || true
+          docker rm $CONTAINER_ID || true
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Display coverage summary
+        if: always()
+        run: |
+          if [ -f htmlcov/index.html ]; then
+            echo "✓ Coverage report generated"
+            # Extract coverage percentage if available
+            grep -o 'pc_cov">[0-9]*%' htmlcov/index.html | head -1 || echo "Coverage data available"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.test.yml down -v
+
+  e2e-test:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start services
+        run: |
+          docker-compose up -d
+          echo "Waiting for services to be healthy..."
+          sleep 30
+
+      - name: Check service health
+        run: |
+          curl -f http://localhost:8000/api/v1/health || exit 1
+
+      - name: Run E2E tests
+        run: |
+          chmod +x scripts/test_e2e.sh
+          ./scripts/test_e2e.sh
+
+      - name: Show API logs on failure
+        if: failure()
+        run: |
+          docker-compose logs api
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose down -v
+
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install flake8 black isort mypy
+
+      - name: Run flake8
+        continue-on-error: true
+        run: |
+          flake8 app/ tests/ --max-line-length=120 --exclude=__pycache__,alembic
+
+      - name: Check black formatting
+        continue-on-error: true
+        run: |
+          black --check app/ tests/
+
+      - name: Check import sorting
+        continue-on-error: true
+        run: |
+          isort --check-only app/ tests/
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # Required for uploading SARIF results
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true  # Don't fail the build on vulnerabilities
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        continue-on-error: true  # Don't fail if upload fails
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Display scan summary
+        if: always()
+        run: |
+          echo "✓ Security scan completed"
+          if [ -f trivy-results.sarif ]; then
+            echo "Results uploaded to Security tab"
+          fi

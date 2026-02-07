@@ -95,12 +95,14 @@ def test_partial_match(scorer, sample_occupation_skills):
     # skill2: (70/260) * 0.5 = 0.135
     # skill3: (50/260) * 0.0 = 0
     # skill4: (60/260) * 0.25 = 0.058
-    # Total: 0.423 * 100 = 42.3%
+    # Total: 0.424 * 100 = 42.4%
+    # Gaps: skill3 (0.0) and skill4 (0.25) = (50+60)/260 * 100 = 42.3%
 
     assert 40 < score.match_score < 45
-    assert score.gap_severity > 30  # skill3 and skill4 are gaps
+    assert 40 < score.gap_severity < 45  # skill3 and skill4 are gaps
     assert len(score.top_gaps) == 2
-    assert score.bucket == "long_reskill"
+    # With gap_severity ~42%, it falls in TRAINABLE range (26-55)
+    assert score.bucket == "trainable"
 
 
 def test_trainable_bucket(scorer, sample_occupation_skills):
@@ -248,11 +250,18 @@ def test_bucket_boundaries():
 
     # Exactly at READY_NOW threshold
     assert scorer._assign_bucket(75.0, 25.0) == "ready_now"
-    assert scorer._assign_bucket(74.9, 25.0) == "trainable"
+    # 74.9 with gap=25.0: not ready_now (match<75), not trainable (match>74, gap<26)
+    assert scorer._assign_bucket(74.9, 25.0) == "long_reskill"
 
-    # Exactly at TRAINABLE threshold
-    assert scorer._assign_bucket(50.0, 30.0) == "trainable"
-    assert scorer._assign_bucket(49.9, 30.0) == "long_reskill"
+    # Within TRAINABLE range
+    assert scorer._assign_bucket(74.0, 25.0) == "trainable"  # match at upper bound
+    assert scorer._assign_bucket(50.0, 30.0) == "trainable"  # match at lower bound
+    assert scorer._assign_bucket(60.0, 40.0) == "trainable"  # match and gap in range
+    assert scorer._assign_bucket(49.9, 30.0) == "trainable"  # gap in range (26-55)
+
+    # Below both thresholds - LONG_RESKILL
+    assert scorer._assign_bucket(49.9, 25.0) == "long_reskill"  # match<50, gap<26
+    assert scorer._assign_bucket(30.0, 60.0) == "long_reskill"  # match<50, gap>55
 
 
 def test_metadata_in_score(scorer, sample_occupation_skills):

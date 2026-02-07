@@ -1,0 +1,259 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: skillsprout-db
+    environment:
+      POSTGRES_DB: skillsprout
+      POSTGRES_USER: skillsprout
+      POSTGRES_PASSWORD: skillsprout_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillsprout"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skillsprout-network
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: skillsprout-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skillsprout-network
+
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      target: development
+    container_name: skillsprout-api
+    environment:
+      # Application
+      APP_NAME: SkillSprout
+      ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+
+      # API
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout
+      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+
+      # O*NET (Demo mode by default)
+      DEMO_MODE: "true"
+      ONET_USERNAME: ""
+      ONET_PASSWORD: ""
+
+      # Model Configuration
+      MODEL_VERSION: v1_baseline
+      MODEL_TRAINING_MIN_SAMPLES: 50
+      EXPLORATION_EPSILON: 0.1
+
+      # Scoring Thresholds
+      READY_NOW_MATCH_THRESHOLD: 75.0
+      READY_NOW_GAP_THRESHOLD: 25.0
+      TRAINABLE_MATCH_MIN: 50.0
+      TRAINABLE_MATCH_MAX: 74.0
+      TRAINABLE_GAP_MIN: 26.0
+      TRAINABLE_GAP_MAX: 55.0
+
+      # Background Tasks
+      CACHE_WARM_BATCH_SIZE: 50
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - model_artifacts:/app/models
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - skillsprout-network
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting FastAPI server...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: .
+      target: development
+    container_name: skillsprout-celery-worker
+    environment:
+      # Application
+      APP_NAME: SkillSprout
+      ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout
+      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+
+      # O*NET
+      DEMO_MODE: "true"
+      ONET_USERNAME: ""
+      ONET_PASSWORD: ""
+
+      # Model Configuration
+      MODEL_VERSION: v1_baseline
+      MODEL_TRAINING_MIN_SAMPLES: 50
+    volumes:
+      - .:/app
+      - model_artifacts:/app/models
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skillsprout-network
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+
+  # Celery Beat (Periodic Tasks) - Optional
+  celery-beat:
+    build:
+      context: .
+      target: development
+    container_name: skillsprout-celery-beat
+    environment:
+      # Application
+      APP_NAME: SkillSprout
+      ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout
+      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+
+      # O*NET
+      DEMO_MODE: "true"
+
+      # Model Configuration
+      MODEL_VERSION: v1_baseline
+      PERIODIC_TRAINING_CRON: "0 2 * * *"
+    volumes:
+      - .:/app
+      - model_artifacts:/app/models
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skillsprout-network
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+
+  # Test Runner (for running tests in isolated environment)
+  test:
+    build:
+      context: .
+      target: development
+    container_name: skillsprout-test
+    environment:
+      # Test environment
+      APP_NAME: SkillSprout
+      ENV: test
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+
+      # Database (test database)
+      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout_test
+      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout_test
+
+      # Redis
+      REDIS_URL: redis://redis:6379/2
+
+      # Celery
+      CELERY_BROKER_URL: redis://redis:6379/2
+      CELERY_RESULT_BACKEND: redis://redis:6379/3
+
+      # O*NET (Demo mode for tests)
+      DEMO_MODE: "true"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skillsprout-network
+    profiles:
+      - test
+    command: >
+      sh -c "
+        echo 'Creating test database...' &&
+        PGPASSWORD=skillsprout_password psql -h db -U skillsprout -c 'CREATE DATABASE skillsprout_test;' || true &&
+        echo 'Running migrations on test database...' &&
+        alembic upgrade head &&
+        echo 'Running tests...' &&
+        pytest -v --tb=short
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  model_artifacts:
+    driver: local
+
+networks:
+  skillsprout-network:
+    driver: bridge
