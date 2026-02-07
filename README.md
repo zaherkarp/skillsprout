@@ -65,6 +65,28 @@ A production-minded MVP web application that uses O*NET occupation skill data to
 
 ## Quick Start
 
+### 🐳 Docker (Recommended for Testing)
+
+The fastest way to get started is using Docker:
+
+```bash
+# One command to start everything
+make dev
+
+# Or without Make
+docker-compose up -d
+```
+
+This will:
+- Start PostgreSQL, Redis, FastAPI, and Celery
+- Run database migrations
+- Seed demo data
+- Be ready at http://localhost:8000
+
+**See [DOCKER_TESTING.md](DOCKER_TESTING.md) for complete Docker testing guide.**
+
+### 💻 Local Development
+
 ### 1. Clone and Setup
 
 ```bash
@@ -260,6 +282,35 @@ celery -A app.tasks.celery_app call app.tasks.tasks.train_calibration_model_task
 The training task runs automatically daily at 2 AM (configurable via `PERIODIC_TRAINING_CRON`).
 
 ## Testing
+
+### Docker Testing (Recommended)
+
+Full isolated testing environment with all services:
+
+```bash
+# Using Make (easiest)
+make test
+
+# Using test script (with cleanup)
+./scripts/run_tests.sh
+
+# Run E2E tests against running environment
+make up
+./scripts/test_e2e.sh
+
+# With Docker Compose directly
+docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+```
+
+**Benefits:**
+- Isolated test database and Redis
+- No local Python/PostgreSQL/Redis needed
+- Consistent across all environments
+- Perfect for CI/CD
+
+**See [DOCKER_TESTING.md](DOCKER_TESTING.md) for comprehensive testing guide.**
+
+### Local Testing
 
 ```bash
 # Run all tests
