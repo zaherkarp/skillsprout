@@ -39,7 +39,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, JSON, select, delete, func
+from sqlalchemy import Column, DateTime, Integer, String, Text, JSON, func
 from sqlalchemy.orm import Session
 
 from app.db.session import Base, SyncSessionLocal
@@ -280,7 +280,14 @@ def purge_expired_records(
         return 0
 
     cutoff = datetime.utcnow() - timedelta(days=rule.max_days)
-    age_col = getattr(rule.model_class, rule.age_column)
+    age_col = getattr(rule.model_class, rule.age_column, None)
+    if age_col is None:
+        logger.error(
+            "Retention rule misconfigured: %s has no column '%s'",
+            rule.model_class.__name__,
+            rule.age_column,
+        )
+        return 0
 
     # For UserCurrentOccupation, only purge INACTIVE historical records.
     # Active occupation selections must be preserved.
@@ -424,7 +431,7 @@ def purge_user_data(
     )
     deleted = (
         db.query(UserFeedback)
-        .filter(UserFeedback.event_id.in_(select(feedback_events.c.id)))
+        .filter(UserFeedback.event_id.in_(feedback_events.c.id))
         .delete(synchronize_session="fetch")
     )
     summary["user_feedback"] = deleted
@@ -432,7 +439,7 @@ def purge_user_data(
     # 2. RecommendedOccupation (leaf -- depends on RecommendationEvent)
     deleted = (
         db.query(RecommendedOccupation)
-        .filter(RecommendedOccupation.event_id.in_(select(feedback_events.c.id)))
+        .filter(RecommendedOccupation.event_id.in_(feedback_events.c.id))
         .delete(synchronize_session="fetch")
     )
     summary["recommended_occupation"] = deleted

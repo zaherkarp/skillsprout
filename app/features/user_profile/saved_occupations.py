@@ -20,7 +20,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -324,7 +324,7 @@ async def list_saved_occupations(
 async def update_saved_occupation(
     saved_id: str,
     request: SavedOccupationUpdate,
-    user_id: int,
+    user_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> SavedOccupationResponse:
     """Update notes or training status for a saved occupation."""
@@ -384,7 +384,7 @@ async def update_saved_occupation(
 @router.delete("/{saved_id}", status_code=204)
 async def delete_saved_occupation(
     saved_id: str,
-    user_id: int,
+    user_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Remove a saved occupation."""
@@ -470,7 +470,7 @@ def rescore_saved_occupations() -> Dict[str, Any]:
                 occ_skills = [
                     {
                         "element_id": os.element_id,
-                        "skill_name": os.element_id,  # simplified for sync context
+                        "skill_name": (os.skill.name if hasattr(os, 'skill') and os.skill else os.element_id),
                         "importance": os.importance,
                         "level": os.level,
                     }
