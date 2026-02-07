@@ -40,8 +40,8 @@ A production-minded MVP web application that uses O*NET occupation skill data to
 │   FastAPI App   │  ← API endpoints + minimal UI
 └────────┬────────┘
          │
-    ┌────┴────┐
-    │         │
+    ┌────┴───────┐
+    │            │
 ┌───▼──────┐  ┌──▼──────┐
 │ DB       │  │ O*NET   │
 │(Postgres)│  │ API     │
