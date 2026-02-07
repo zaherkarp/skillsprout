@@ -60,7 +60,7 @@ def clean_signal_state():
 def app():
     """Create a test FastAPI app with the events router."""
     test_app = FastAPI()
-    test_app.include_router(events_router, prefix="/api/v1/events")
+    test_app.include_router(events_router, prefix="/api/v1")
     return test_app
 
 

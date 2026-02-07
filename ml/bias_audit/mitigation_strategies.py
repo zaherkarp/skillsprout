@@ -158,12 +158,15 @@ class SkillReweightingMitigation:
         if profiles is None:
             profiles = get_demographic_profiles()
 
-        # Split occupations by gender majority
+        # Split occupations by gender majority, restricted to codes in the map
+        available_codes = set(occupation_skills_map.keys())
         female_majority_codes = {
-            code for code, p in profiles.items() if p.pct_female >= 60.0
+            code for code, p in profiles.items()
+            if p.pct_female >= 60.0 and code in available_codes
         }
         male_majority_codes = {
-            code for code, p in profiles.items() if p.pct_female < 40.0
+            code for code, p in profiles.items()
+            if p.pct_female < 40.0 and code in available_codes
         }
 
         # Count skill frequency in each group

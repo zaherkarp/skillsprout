@@ -20,7 +20,7 @@ Each resource is tagged with:
 """
 import logging
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
 

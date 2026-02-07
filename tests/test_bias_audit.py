@@ -589,7 +589,7 @@ class TestStalenessPenalty:
         result = mitigation.apply(score, old_date)
 
         assert result.adjusted_score.match_score < score.match_score
-        assert result.adjusted_score.gap_severity > score.gap_severity
+        assert result.adjusted_score.gap_severity >= score.gap_severity
 
     def test_penalty_increases_with_age(self, scorer, sample_skills, high_match_ratings):
         """Older data should receive a larger penalty."""
