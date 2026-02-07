@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     # Database
-    database_url: str
-    database_url_sync: str
+    database_url: str = "sqlite+aiosqlite:///:memory:"
+    database_url_sync: str = "sqlite:///:memory:"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
