@@ -57,6 +57,16 @@ class Settings(BaseSettings):
     trainable_gap_min: float = 26.0
     trainable_gap_max: float = 55.0
 
+    # Authentication
+    api_key: str = ""  # Set via API_KEY env var; empty = auth disabled (dev only)
+    auth_enabled: bool = False  # Set to True in production
+
+    # Feature Flags
+    enable_private_mode: bool = True
+    enable_bias_mitigations: bool = True
+    enable_lite_mode: bool = True
+    enable_session_export: bool = True
+
     # Background Tasks
     cache_warm_batch_size: int = 50
     periodic_training_cron: str = "0 2 * * *"

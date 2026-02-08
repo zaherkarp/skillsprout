@@ -33,6 +33,12 @@ from app.core.privacy.data_deletion import router as data_deletion_router
 from app.core.monitoring.health_checks import router as health_router
 from app.core.monitoring.health_checks import mark_startup
 
+# -- Prometheus metrics (mounted at root for scraping) --------------------
+from app.core.monitoring.metrics import metrics_router
+
+# -- Authentication middleware --------------------------------------------
+from app.core.auth import APIKeyAuthMiddleware
+
 # -- Progressive enhancement (various mounting strategies) -----------------
 from app.core.progressive.session_resumption import router as session_router
 from app.core.progressive.offline_capability import router as offline_router
@@ -69,10 +75,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Authentication middleware (must be added before CORS so it runs after CORS)
+app.add_middleware(APIKeyAuthMiddleware)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  # TODO: restrict to specific origins in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -111,6 +120,9 @@ app.include_router(offline_router)
 
 # Health checks — mount at root for k8s/load-balancer probes
 app.include_router(health_router)
+
+# Prometheus metrics — mount at root for scraping
+app.include_router(metrics_router)
 
 
 # ==================== UI Routes ====================

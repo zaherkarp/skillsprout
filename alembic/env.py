@@ -18,6 +18,7 @@ from app.models.models import (
     UserCurrentOccupation, UserSkillRating, RecommendationEvent,
     RecommendedOccupation, UserFeedback, ModelRegistry
 )
+from app.core.privacy.retention_policy import DeletionAuditLog  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
