@@ -250,11 +250,12 @@ def test_bucket_boundaries():
 
     # Exactly at READY_NOW threshold
     assert scorer._assign_bucket(75.0, 25.0) == "ready_now"
-    # 74.9 with gap=25.0: not ready_now (match<75), not trainable (match>74, gap<26)
-    assert scorer._assign_bucket(74.9, 25.0) == "long_reskill"
+    # 74.9 with gap=25.0: not ready_now (match<75), but match >= 50 → trainable
+    # (Previously this was long_reskill due to a dead-zone bug; fixed for monotonicity)
+    assert scorer._assign_bucket(74.9, 25.0) == "trainable"
 
     # Within TRAINABLE range
-    assert scorer._assign_bucket(74.0, 25.0) == "trainable"  # match at upper bound
+    assert scorer._assign_bucket(74.0, 25.0) == "trainable"  # match >= 50
     assert scorer._assign_bucket(50.0, 30.0) == "trainable"  # match at lower bound
     assert scorer._assign_bucket(60.0, 40.0) == "trainable"  # match and gap in range
     assert scorer._assign_bucket(49.9, 30.0) == "trainable"  # gap in range (26-55)

@@ -171,10 +171,12 @@ class BaselineScorer:
         )
 
         if total_importance == 0:
-            # If no importance data, use equal weights
+            # If no importance data, use equal weights.
+            # Build a local lookup to avoid mutating the caller's data.
             total_importance = len(occupation_skills)
-            for skill in occupation_skills:
-                skill["importance"] = 1.0
+            importance_override = {id(skill): 1.0 for skill in occupation_skills}
+        else:
+            importance_override = None
 
         # Calculate weighted match and identify gaps
         weighted_match = 0.0
@@ -184,7 +186,10 @@ class BaselineScorer:
         for skill in occupation_skills:
             element_id = skill.get("element_id", "")
             skill_name = skill.get("skill_name", "Unknown Skill")
-            importance = skill.get("importance", 0) or 0
+            if importance_override is not None:
+                importance = importance_override[id(skill)]
+            else:
+                importance = skill.get("importance", 0) or 0
             level = skill.get("level")
 
             # Get user capability for this skill
@@ -225,8 +230,15 @@ class BaselineScorer:
 
         Bucket logic:
         - READY_NOW: match_score >= 75 AND gap_severity <= 25
-        - TRAINABLE: match_score 50-74 OR gap_severity 26-55
+        - TRAINABLE: match_score >= 50 OR gap_severity in [26, 55]
         - LONG_RESKILL: else
+
+        The trainable match check uses only a lower bound (>= 50) with no
+        upper cap.  The ready_now check runs first, so high-match users
+        with low gaps are already captured.  Removing the upper cap closes
+        a dead zone between trainable_match_max and ready_now_match_threshold
+        that could violate monotonicity (improving a skill could downgrade
+        the bucket from trainable to long_reskill).
 
         Args:
             match_score: Match score (0-100)
@@ -242,9 +254,9 @@ class BaselineScorer:
         ):
             return "ready_now"
 
-        # TRAINABLE: moderate match or moderate gaps
+        # TRAINABLE: moderate-to-high match, or moderate gaps
         if (
-            self.trainable_match_min <= match_score <= self.trainable_match_max
+            match_score >= self.trainable_match_min
             or self.trainable_gap_min <= gap_severity <= self.trainable_gap_max
         ):
             return "trainable"

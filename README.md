@@ -1,5 +1,112 @@
 # SkillSprout
 
+## Technical Leadership Orientation
+
+Welcome. This section is written for the incoming technical manager to get oriented quickly: what SkillSprout does, how to verify it works, what decisions were made and why, and what open questions need your judgment.
+
+### What This Project Is
+
+SkillSprout is a job-transition recommendation engine. Users enter their current occupation and self-rate their skills (0-4 scale). The system scores target occupations using O\*NET skill data and assigns each to one of three buckets:
+
+- **Ready Now** - match >= 75%, gap <= 25%: apply immediately
+- **Trainable** - match >= 50%, or gap in 26-55%: reachable with focused training
+- **Long Reskill** - everything else: requires significant reskilling
+
+It then generates structured explanations, skill-gap analyses, and personalized training paths. The system is designed to learn from user feedback via a calibration layer (logistic regression, not yet active in production — needs ~500 labeled samples).
+
+### Quickstart: Setup and Verify
+
+```bash
+# Option A: Docker (recommended, starts all services)
+make dev                    # PostgreSQL, Redis, FastAPI, Celery
+open http://localhost:8000  # Web UI
+open http://localhost:8000/api/v1/docs  # Swagger
+
+# Option B: Local with SQLite (no external services needed)
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./dev.db \
+  DATABASE_URL_SYNC=sqlite:///./dev.db \
+  uvicorn app.main:app --reload
+```
+
+### Running Tests
+
+```bash
+# Full suite (725 tests, ~12s on SQLite)
+DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./test.db \
+  DATABASE_URL_SYNC=sqlite:///./test.db \
+  python -m pytest tests/ -v
+
+# Docker-isolated (PostgreSQL, full integration)
+make test
+
+# Specific focus areas:
+python -m pytest tests/test_cross_team_qa.py -v    # 58 invariant/contract tests
+python -m pytest tests/integration/ -v              # 5-persona pipeline tests
+python -m pytest tests/unit/test_scoring.py -v      # Scoring engine unit tests
+```
+
+All 725 tests pass as of this writing. The CI pipeline (`.github/workflows/test.yml`) runs lint, security scan, unit tests, integration tests, E2E tests, and a production image build on every push.
+
+### Architecture at a Glance
+
+| Layer | Key files | What to review |
+|-------|-----------|----------------|
+| **Scoring engine** | `app/ml/scoring.py` (344 lines) | `_assign_bucket()` for bucket logic, `_calculate_scores()` for the weighted matching formula |
+| **Calibration model** | `app/ml/calibration.py` | Logistic regression layer — framework complete, awaiting production feedback data |
+| **API surface** | `app/main.py`, `app/api/endpoints.py` | 46 routes across 14 routers; auth middleware in `app/core/auth.py` |
+| **Explainability** | `app/features/explainability/` | Structured explanations with threshold transparency and "what would change" analysis |
+| **Training paths** | `app/features/training_paths/` | Prerequisite-aware path generation with budget/timeline constraint tracking |
+| **Test personas** | `tests/integration/test_full_pipeline.py` | 5 personas (Maria/nurse, James/retail, Aisha/bootcamp, Robert/mechanic, Sarah/veteran) |
+| **Cross-team QA** | `tests/test_cross_team_qa.py` | 58 tests covering mathematical invariants, boundary values, monotonicity, input safety, contract alignment |
+| **Architecture decisions** | `docs/adr/ADR-001` through `ADR-006` | Six ADRs documenting scoring, features, cold start, calibration, feedback signals, and bias audit design |
+
+### What the Combined QA Review Found and Fixed
+
+Two teams with different QA approaches (scenario-driven vs. invariant-driven) merged and conducted a joint technical review. Three issues were found and resolved:
+
+| Issue | Severity | Root cause | Fix |
+|-------|----------|------------|-----|
+| **Input mutation** | Medium | `_calculate_scores()` modified the caller's `occupation_skills` list when all importance values were 0, setting them to 1.0. Repeated scoring of the same data produced different results. | Replaced in-place mutation with a local `importance_override` dict keyed by object identity. Caller data is never touched. (`app/ml/scoring.py`) |
+| **Bucket monotonicity violation** | High | A dead zone existed between `trainable_match_max` (74) and `ready_now_match_threshold` (75). Improving a skill could reduce gap severity below the trainable range while keeping match just below ready_now — causing a downgrade from trainable to long_reskill. | Removed the upper bound on trainable match. Any match >= 50 that does not qualify for ready_now is now trainable. The ready_now check runs first, so this cannot produce false positives. (`app/ml/scoring.py`) |
+| **Cross-persona test semantics** | Low | A test assumed Aisha (has programming) would have a higher total match than Maria for Software Developer roles. In reality, Maria's 6 expert-level soft skills give her broader skill coverage (63% vs 61%), even though Aisha has programming and Maria does not. | Test rewritten to assert gap-specific invariant: Aisha has no programming gap, while Maria/James/Robert do. (`tests/test_cross_team_qa.py`) |
+
+### Key Design Decisions (for your review)
+
+1. **Two-stage scoring** (ADR-001): deterministic baseline + learned calibration. Baseline ships now; calibration activates when feedback volume is sufficient (~500 samples).
+2. **Trainable bucket uses OR logic** (match >= 50 OR gap in 26-55). This is intentional — users can enter trainable via either high match with some gaps or low match with targeted gaps.
+3. **Auth disabled in dev** (`AUTH_ENABLED=false`). API key middleware is wired (`app/core/auth.py`); set `AUTH_ENABLED=true` and `API_KEY=<secret>` in production. OAuth2/JWT is roadmap.
+4. **Demo mode** activates when O\*NET credentials are absent. Uses `MockONetClient` with 3 occupations. All tests run in demo mode by default.
+5. **Privacy**: GDPR data export (`/api/v1/user/{id}/data-export`) and deletion endpoints are implemented. Private mode suppresses all writes. Review with legal before production.
+
+### Outstanding Questions for Leadership Decision
+
+These items require human judgment and cannot be resolved by engineering alone:
+
+| # | Question | Context | Recommendation |
+|---|----------|---------|----------------|
+| 1 | **When to activate the calibration model?** | Framework is built; needs ~500 labeled feedback samples (interview/offer/apply/hide). Currently the system runs on deterministic baseline only. | Set up a feedback collection pipeline with early users. Monitor sample volume via `/api/v1/model/status`. Activate when AUC > 0.65 on held-out set. |
+| 2 | **Training catalog data accuracy** | 40+ resources in `app/features/training_paths/training_catalog.py` with URLs, costs, durations. These were best-effort at time of build. | Assign quarterly review. Consider a Celery task for automated URL checking (roadmap item). |
+| 3 | **Bias audit data source** | `ml/bias_audit/` uses stub demographic profiles. Real BLS data is needed for production demographic parity testing. | Decide which BLS datasets to integrate and whether demographic data collection from users is in scope. |
+| 4 | **Production auth upgrade path** | API key auth is minimal. OAuth2/JWT with user accounts is on the roadmap. | Decide: build in-house, integrate with an identity provider (Auth0, Cognito), or defer until user testing validates the product? |
+| 5 | **Cold start k=50 cluster count** | K-means clustering uses k=50 for ~970 O\*NET occupations. Appropriate for current data; may need revalidation as occupation data updates. | Validate silhouette score on production data after O\*NET refresh cycles. |
+| 6 | **Load testing target** | Roadmap lists 100 concurrent users. No load testing has been performed yet. | Define production SLA (p99 latency, throughput) before investing in load testing infrastructure. |
+| 7 | **`trainable_match_max` config** | The `trainable_match_max` setting in `app/core/config.py` is no longer used by the bucket logic (removed to fix monotonicity). It remains in the config for backward compatibility with explainability threshold profiles. | Decide whether to remove it from config or keep for future A/B experiments. |
+
+### Where to Dig Deeper
+
+| If you want to understand... | Start here |
+|------------------------------|-----------|
+| How scoring works, step by step | `app/ml/scoring.py`, then `MODELING_NOTES.md` |
+| What got built in the hackathon | "Hackathon Sprint Summary" section below, plus `docs/adr/` |
+| How the test suite is structured | `tests/` directory — 23 test files, organized by unit/integration, with `conftest.py` for shared fixtures |
+| Infrastructure and deployment | `Dockerfile`, `docker-compose.yml`, `.github/workflows/test.yml`, `docs/infra-audit.md` |
+| Privacy and compliance | `app/core/privacy/`, the GDPR endpoints in `app/api/endpoints.py` |
+| What the users see | `templates/`, `static/`, `docs/user-guide.md` |
+
+---
+
 A production-minded MVP web application that uses O*NET occupation skill data to help users discover job transition opportunities based on their current skills and experience.
 
 ## Features
