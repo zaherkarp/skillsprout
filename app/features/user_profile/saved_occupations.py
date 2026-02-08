@@ -21,6 +21,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -381,12 +382,12 @@ async def update_saved_occupation(
     )
 
 
-@router.delete("/{saved_id}", status_code=204)
+@router.delete("/{saved_id}", status_code=204, response_class=Response)
 async def delete_saved_occupation(
     saved_id: str,
     user_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
-) -> None:
+) -> Response:
     """Remove a saved occupation."""
     result = await db.execute(
         select(UserProfileRow).where(UserProfileRow.id == user_id)
@@ -409,6 +410,7 @@ async def delete_saved_occupation(
 
     await db.commit()
     logger.info("Deleted saved occupation %s for user %d", saved_id, user_id)
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------

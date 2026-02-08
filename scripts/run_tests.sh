@@ -21,7 +21,7 @@ echo -e "${NC}"
 # Function to cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Cleaning up test environment...${NC}"
-    docker-compose -f docker-compose.test.yml down -v > /dev/null 2>&1 || true
+    docker compose -f docker-compose.test.yml down -v > /dev/null 2>&1 || true
 }
 
 # Set trap to cleanup on exit
@@ -35,11 +35,11 @@ fi
 
 # Build test image if needed
 echo -e "${YELLOW}Building test image...${NC}"
-docker-compose -f docker-compose.test.yml build
+docker compose -f docker-compose.test.yml build
 
 # Run tests
 echo -e "${GREEN}Starting test environment...${NC}"
-docker-compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
+docker compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
 
 # Capture exit code
 EXIT_CODE=$?

@@ -15,11 +15,11 @@ help: ## Show this help message
 
 build: ## Build Docker images
 	@echo "$(YELLOW)Building Docker images...$(RESET)"
-	docker-compose build
+	docker compose build
 
 up: ## Start all services
 	@echo "$(GREEN)Starting all services...$(RESET)"
-	docker-compose up -d
+	docker compose up -d
 	@echo "$(GREEN)✓ Services started!$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Available at:$(RESET)"
@@ -31,74 +31,74 @@ up: ## Start all services
 
 down: ## Stop all services
 	@echo "$(YELLOW)Stopping all services...$(RESET)"
-	docker-compose down
+	docker compose down
 	@echo "$(GREEN)✓ Services stopped$(RESET)"
 
 restart: ## Restart all services
 	@echo "$(YELLOW)Restarting all services...$(RESET)"
-	docker-compose restart
+	docker compose restart
 	@echo "$(GREEN)✓ Services restarted$(RESET)"
 
 logs: ## Show logs from all services
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-api: ## Show logs from API service only
-	docker-compose logs -f api
+	docker compose logs -f api
 
 logs-celery: ## Show logs from Celery worker only
-	docker-compose logs -f celery-worker
+	docker compose logs -f celery-worker
 
 logs-db: ## Show logs from database only
-	docker-compose logs -f db
+	docker compose logs -f db
 
 shell-api: ## Open shell in API container
-	docker-compose exec api /bin/bash
+	docker compose exec api /bin/bash
 
 shell-db: ## Open PostgreSQL shell
-	docker-compose exec db psql -U skillsprout -d skillsprout
+	docker compose exec db psql -U skillsprout -d skillsprout
 
 test: ## Run tests in isolated environment
 	@echo "$(YELLOW)Running tests...$(RESET)"
-	docker-compose --profile test run --rm test
+	docker compose --profile test run --rm test
 	@echo "$(GREEN)✓ Tests complete$(RESET)"
 
 seed: ## Seed demo data
 	@echo "$(YELLOW)Seeding demo data...$(RESET)"
-	docker-compose exec api python scripts/seed_demo.py
+	docker compose exec api python scripts/seed_demo.py
 	@echo "$(GREEN)✓ Demo data seeded$(RESET)"
 
 migrate: ## Run database migrations
 	@echo "$(YELLOW)Running database migrations...$(RESET)"
-	docker-compose exec api alembic upgrade head
+	docker compose exec api alembic upgrade head
 	@echo "$(GREEN)✓ Migrations complete$(RESET)"
 
 migrate-create: ## Create a new migration (usage: make migrate-create MSG="description")
 	@echo "$(YELLOW)Creating new migration...$(RESET)"
-	docker-compose exec api alembic revision --autogenerate -m "$(MSG)"
+	docker compose exec api alembic revision --autogenerate -m "$(MSG)"
 	@echo "$(GREEN)✓ Migration created$(RESET)"
 
 health: ## Check health of all services
 	@echo "$(YELLOW)Checking service health...$(RESET)"
 	@echo ""
 	@echo "$(BLUE)Database:$(RESET)"
-	@docker-compose exec db pg_isready -U skillsprout && echo "$(GREEN)✓ Healthy$(RESET)" || echo "$(RED)✗ Unhealthy$(RESET)"
+	@docker compose exec db pg_isready -U skillsprout && echo "$(GREEN)✓ Healthy$(RESET)" || echo "$(RED)✗ Unhealthy$(RESET)"
 	@echo ""
 	@echo "$(BLUE)Redis:$(RESET)"
-	@docker-compose exec redis redis-cli ping && echo "$(GREEN)✓ Healthy$(RESET)" || echo "$(RED)✗ Unhealthy$(RESET)"
+	@docker compose exec redis redis-cli ping && echo "$(GREEN)✓ Healthy$(RESET)" || echo "$(RED)✗ Unhealthy$(RESET)"
 	@echo ""
 	@echo "$(BLUE)API:$(RESET)"
 	@curl -sf http://localhost:8000/api/v1/health > /dev/null && echo "$(GREEN)✓ Healthy$(RESET)" || echo "$(RED)✗ Unhealthy$(RESET)"
 	@echo ""
 
 ps: ## Show running containers
-	docker-compose ps
+	docker compose ps
 
 stats: ## Show container resource usage
-	docker stats $$(docker-compose ps -q)
+	docker stats $$(docker compose ps -q)
 
 clean: ## Stop services and remove volumes (keeps images)
 	@echo "$(YELLOW)Stopping services and removing volumes...$(RESET)"
-	docker-compose down -v
+	docker compose down -v
 	@echo "$(GREEN)✓ Cleaned up$(RESET)"
 
 prune: ## Remove all Docker resources (including images)
@@ -106,7 +106,7 @@ prune: ## Remove all Docker resources (including images)
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose down -v --rmi all; \
+		docker compose down -v --rmi all; \
 		echo "$(GREEN)✓ Pruned$(RESET)"; \
 	else \
 		echo "$(YELLOW)Cancelled$(RESET)"; \
@@ -133,30 +133,30 @@ dev: build up seed ## Full dev environment setup (build, start, seed)
 
 quick-start: ## Quick start without building (uses cached images)
 	@echo "$(GREEN)Quick starting services...$(RESET)"
-	docker-compose up -d
+	docker compose up -d
 	@echo "$(GREEN)✓ Started! Visit http://localhost:8000$(RESET)"
 
 # Celery specific commands
 celery-status: ## Show Celery worker status
-	docker-compose exec celery-worker celery -A app.tasks.celery_app status
+	docker compose exec celery-worker celery -A app.tasks.celery_app status
 
 celery-tasks: ## List registered Celery tasks
-	docker-compose exec celery-worker celery -A app.tasks.celery_app inspect registered
+	docker compose exec celery-worker celery -A app.tasks.celery_app inspect registered
 
 celery-active: ## Show active Celery tasks
-	docker-compose exec celery-worker celery -A app.tasks.celery_app inspect active
+	docker compose exec celery-worker celery -A app.tasks.celery_app inspect active
 
 # Model training
 train-model: ## Manually trigger model training
 	@echo "$(YELLOW)Triggering model training...$(RESET)"
-	docker-compose exec celery-worker celery -A app.tasks.celery_app call app.tasks.tasks.train_calibration_model_task
+	docker compose exec celery-worker celery -A app.tasks.celery_app call app.tasks.tasks.train_calibration_model_task
 	@echo "$(GREEN)✓ Training task queued$(RESET)"
 
 # Database operations
 db-backup: ## Backup database to backups/
 	@mkdir -p backups
 	@echo "$(YELLOW)Backing up database...$(RESET)"
-	docker-compose exec -T db pg_dump -U skillsprout skillsprout > backups/skillsprout_$$(date +%Y%m%d_%H%M%S).sql
+	docker compose exec -T db pg_dump -U skillsprout skillsprout > backups/skillsprout_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "$(GREEN)✓ Backup created in backups/$(RESET)"
 
 db-restore: ## Restore database from latest backup
@@ -167,18 +167,18 @@ db-restore: ## Restore database from latest backup
 		exit 1; \
 	fi; \
 	echo "Restoring from $$LATEST..."; \
-	docker-compose exec -T db psql -U skillsprout skillsprout < $$LATEST
+	docker compose exec -T db psql -U skillsprout skillsprout < $$LATEST
 	@echo "$(GREEN)✓ Database restored$(RESET)"
 
 # Testing variations
 test-unit: ## Run only unit tests
-	docker-compose --profile test run --rm test pytest tests/unit/ -v
+	docker compose --profile test run --rm test pytest tests/unit/ -v
 
 test-integration: ## Run only integration tests
-	docker-compose --profile test run --rm test pytest tests/integration/ -v
+	docker compose --profile test run --rm test pytest tests/integration/ -v
 
 test-coverage: ## Run tests with coverage report
-	docker-compose --profile test run --rm test pytest --cov=app --cov-report=html --cov-report=term
+	docker compose --profile test run --rm test pytest --cov=app --cov-report=html --cov-report=term
 
 # Production build
 build-prod: ## Build production image
@@ -191,11 +191,11 @@ info: ## Show environment information
 	@echo "$(BLUE)SkillSprout Environment Info$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Docker Compose Version:$(RESET)"
-	@docker-compose version
+	@docker compose version
 	@echo ""
 	@echo "$(YELLOW)Docker Version:$(RESET)"
 	@docker version --format '{{.Server.Version}}'
 	@echo ""
 	@echo "$(YELLOW)Services Status:$(RESET)"
-	@docker-compose ps
+	@docker compose ps
 	@echo ""
