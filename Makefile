@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs logs-api logs-celery logs-db shell-api shell-db test seed clean prune migrate health
+.PHONY: help build up down restart logs logs-api logs-celery logs-db shell-api shell-db test seed clean prune migrate health dev-local check-docker
 
 # Colors for terminal output
 GREEN  := \033[0;32m
@@ -13,11 +13,22 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 
-build: ## Build Docker images
+check-docker:
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "$(YELLOW)ERROR: Docker is not installed or not in PATH.$(RESET)"; \
+		echo ""; \
+		echo "Options:"; \
+		echo "  1. Install Docker Desktop: https://www.docker.com/products/docker-desktop/"; \
+		echo "  2. Run locally without Docker: $(BLUE)make dev-local$(RESET)"; \
+		echo ""; \
+		exit 1; \
+	}
+
+build: check-docker ## Build Docker images
 	@echo "$(YELLOW)Building Docker images...$(RESET)"
 	docker compose build
 
-up: ## Start all services
+up: check-docker ## Start all services
 	@echo "$(GREEN)Starting all services...$(RESET)"
 	docker compose up -d
 	@echo "$(GREEN)✓ Services started!$(RESET)"
@@ -130,6 +141,31 @@ dev: build up seed ## Full dev environment setup (build, start, seed)
 	@echo "  - make test       - Run tests"
 	@echo "  - make down       - Stop all services"
 	@echo ""
+
+dev-local: ## Run locally without Docker (SQLite, no Redis/Celery)
+	@echo "$(GREEN)Starting SkillSprout locally (no Docker required)...$(RESET)"
+	@echo ""
+	@command -v python3 >/dev/null 2>&1 || { echo "$(YELLOW)ERROR: python3 is not installed.$(RESET)"; exit 1; }
+	@if [ ! -d ".venv" ]; then \
+		echo "$(YELLOW)Creating virtual environment...$(RESET)"; \
+		python3 -m venv .venv; \
+	fi
+	@echo "$(YELLOW)Installing dependencies...$(RESET)"
+	@. .venv/bin/activate && pip install -r requirements.txt --quiet
+	@echo "$(YELLOW)Starting FastAPI server...$(RESET)"
+	@echo ""
+	@echo "$(GREEN)========================================$(RESET)"
+	@echo "$(GREEN)  Development server starting!$(RESET)"
+	@echo "$(GREEN)========================================$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Available at:$(RESET)"
+	@echo "  - Web UI:    http://localhost:8000"
+	@echo "  - API Docs:  http://localhost:8000/api/v1/docs"
+	@echo ""
+	@echo "$(YELLOW)Note: Using SQLite (in-memory) and demo mode.$(RESET)"
+	@echo "$(YELLOW)Celery tasks will run synchronously.$(RESET)"
+	@echo ""
+	@. .venv/bin/activate && DEMO_MODE=true uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 quick-start: ## Quick start without building (uses cached images)
 	@echo "$(GREEN)Quick starting services...$(RESET)"
