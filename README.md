@@ -792,6 +792,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, testin
 ## License
 
 MIT License — see [LICENSE](LICENSE).
+This site incorporates information from O*NET Web Services by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). O*NET® is a trademark of USDOL/ETA.
 
 ## Documentation
 
