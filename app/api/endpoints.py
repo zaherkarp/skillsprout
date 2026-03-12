@@ -1,11 +1,11 @@
 """FastAPI endpoint handlers."""
 import logging
-from typing import List, Optional
+from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_
 from sqlalchemy.orm import joinedload
 
 from app.db.session import get_db
@@ -21,11 +21,10 @@ from app.schemas.schemas import (
     RecommendationRequest, RecommendationResponse, RecommendationBucket,
     RecommendedOccupation as RecommendedOccupationSchema, SkillGapInfo,
     UserFeedbackRequest, UserFeedbackResponse, ModelStatusResponse, ModelMetrics,
-    HealthCheckResponse, OccupationSearchRequest,
+    HealthCheckResponse,
 )
 from app.services.onet_client import get_onet_client, ONetClientError
 from app.ml.scoring import get_baseline_scorer
-from app.ml.calibration import CalibrationModel, ExplorationPolicy
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -438,7 +437,7 @@ async def get_recommendations(
             .where(
                 and_(
                     UserCurrentOccupation.user_id == user_id,
-                    UserCurrentOccupation.is_active == True,
+                    UserCurrentOccupation.is_active.is_(True),
                 )
             )
             .order_by(UserCurrentOccupation.selected_at.desc())
@@ -703,7 +702,7 @@ async def get_model_status(db: AsyncSession = Depends(get_db)):
         # Get active model from registry
         result = await db.execute(
             select(ModelRegistry)
-            .where(ModelRegistry.is_active == True)
+            .where(ModelRegistry.is_active.is_(True))
             .order_by(ModelRegistry.trained_at.desc())
         )
         active_model = result.scalar_one_or_none()

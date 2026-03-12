@@ -5,8 +5,8 @@ application components: PostgreSQL, Redis, Celery, O*NET cache, and ML model.
 """
 import time
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from datetime import datetime
+from typing import Dict, Optional
 
 from fastapi import APIRouter, Response
 from pydantic import BaseModel, Field
