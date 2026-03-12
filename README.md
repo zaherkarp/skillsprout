@@ -30,6 +30,19 @@ DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./dev.db \
   uvicorn app.main:app --reload
 ```
 
+
+### 🌐 Static Frontend (GitHub Pages)
+
+For a no-backend demo that works on `github.io`, use the static frontend in `docs/github-pages/` (includes a persona QA flow for someone transitioning out of fashion into three fields).
+
+```bash
+cd docs/github-pages
+python -m http.server 4173
+# open http://localhost:4173
+```
+
+Deployment instructions are documented in `docs/github-pages/README.md`.
+
 ### Running Tests
 
 ```bash
