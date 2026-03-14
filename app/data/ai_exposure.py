@@ -113,6 +113,57 @@ EXPOSURE_DATA: dict[str, dict] = {
         "observed_exposure": 0.00,
         "exposure_rank": "minimal",
     },
+    # --- Anthropic Labor Market Report (March 2026) additions ---
+    "15-1251.00": {
+        "theoretical_exposure": 0.94,
+        "observed_exposure": 0.75,
+        "exposure_rank": "high",
+    },
+    "29-2072.00": {
+        "theoretical_exposure": 0.88,
+        "observed_exposure": 0.67,
+        "exposure_rank": "high",
+    },
+    "13-1161.01": {
+        "theoretical_exposure": 0.94,
+        "observed_exposure": 0.65,
+        "exposure_rank": "high",
+    },
+    "41-4012.00": {
+        "theoretical_exposure": 0.80,
+        "observed_exposure": 0.63,
+        "exposure_rank": "high",
+    },
+    "15-1253.00": {
+        "theoretical_exposure": 0.94,
+        "observed_exposure": 0.52,
+        "exposure_rank": "high",
+    },
+    "15-1212.00": {
+        "theoretical_exposure": 0.94,
+        "observed_exposure": 0.49,
+        "exposure_rank": "high",
+    },
+    "15-1232.00": {
+        "theoretical_exposure": 0.94,
+        "observed_exposure": 0.47,
+        "exposure_rank": "high",
+    },
+    "47-2111.00": {
+        "theoretical_exposure": 0.17,
+        "observed_exposure": 0.00,
+        "exposure_rank": "minimal",
+    },
+    "37-3011.00": {
+        "theoretical_exposure": 0.04,
+        "observed_exposure": 0.00,
+        "exposure_rank": "minimal",
+    },
+    "35-3023.00": {
+        "theoretical_exposure": 0.17,
+        "observed_exposure": 0.00,
+        "exposure_rank": "minimal",
+    },
 }
 
 DEMOGRAPHIC_CONTEXT: dict[str, float | int] = {
@@ -125,5 +176,19 @@ DEMOGRAPHIC_CONTEXT: dict[str, float | int] = {
 
 
 def get_exposure(onet_code: str) -> Optional[dict]:
-    """Return the exposure dict for *onet_code*, or None if not found."""
+    """Return the exposure dict for *onet_code*, or None if not found.
+
+    Checks the persistent registry first (if it exists), then falls back
+    to the static EXPOSURE_DATA dictionary.
+    """
+    # Try registry first for dynamically discovered data
+    try:
+        from app.services.occupation_registry import OccupationRegistry, DEFAULT_REGISTRY_PATH
+        if DEFAULT_REGISTRY_PATH.exists():
+            registry = OccupationRegistry(DEFAULT_REGISTRY_PATH)
+            result = registry.get_exposure(onet_code)
+            if result is not None:
+                return result
+    except Exception:
+        pass  # Fall through to static data
     return EXPOSURE_DATA.get(onet_code)

@@ -129,9 +129,84 @@ BLS_PROJECTIONS: dict[str, dict] = {
         "current_employment": 131700,
         "outlook": "moderate growth",
     },
+    # --- Anthropic Labor Market Report (March 2026) additions ---
+    "15-1251.00": {
+        "projected_growth_pct": -10.6,
+        "projected_openings_annual": 9600,
+        "current_employment": 147400,
+        "outlook": "declining",
+    },
+    "29-2072.00": {
+        "projected_growth_pct": 7.0,
+        "projected_openings_annual": 13100,
+        "current_employment": 118400,
+        "outlook": "moderate growth",
+    },
+    "13-1161.01": {
+        "projected_growth_pct": 6.2,
+        "projected_openings_annual": 101200,
+        "current_employment": 965600,
+        "outlook": "moderate growth",
+    },
+    "41-4012.00": {
+        "projected_growth_pct": -1.4,
+        "projected_openings_annual": 142000,
+        "current_employment": 1538400,
+        "outlook": "stable",
+    },
+    "15-1253.00": {
+        "projected_growth_pct": 17.0,
+        "projected_openings_annual": 21900,
+        "current_employment": 198600,
+        "outlook": "strong growth",
+    },
+    "15-1212.00": {
+        "projected_growth_pct": 15.4,
+        "projected_openings_annual": 17400,
+        "current_employment": 175800,
+        "outlook": "strong growth",
+    },
+    "15-1232.00": {
+        "projected_growth_pct": 6.5,
+        "projected_openings_annual": 25600,
+        "current_employment": 882300,
+        "outlook": "moderate growth",
+    },
+    "47-2111.00": {
+        "projected_growth_pct": 11.4,
+        "projected_openings_annual": 73500,
+        "current_employment": 665400,
+        "outlook": "strong growth",
+    },
+    "37-3011.00": {
+        "projected_growth_pct": 4.8,
+        "projected_openings_annual": 143200,
+        "current_employment": 919700,
+        "outlook": "moderate growth",
+    },
+    "35-3023.00": {
+        "projected_growth_pct": 4.2,
+        "projected_openings_annual": 53800,
+        "current_employment": 673100,
+        "outlook": "moderate growth",
+    },
 }
 
 
 def get_projections(onet_code: str) -> Optional[dict]:
-    """Return the BLS projection dict for *onet_code*, or None if not found."""
+    """Return the BLS projection dict for *onet_code*, or None if not found.
+
+    Checks the persistent registry first (if it exists), then falls back
+    to the static BLS_PROJECTIONS dictionary.
+    """
+    # Try registry first for dynamically discovered data
+    try:
+        from app.services.occupation_registry import OccupationRegistry, DEFAULT_REGISTRY_PATH
+        if DEFAULT_REGISTRY_PATH.exists():
+            registry = OccupationRegistry(DEFAULT_REGISTRY_PATH)
+            result = registry.get_projections(onet_code)
+            if result is not None:
+                return result
+    except Exception:
+        pass  # Fall through to static data
     return BLS_PROJECTIONS.get(onet_code)
