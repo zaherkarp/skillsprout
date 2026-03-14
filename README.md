@@ -46,7 +46,7 @@ Deployment instructions are documented in `docs/github-pages/README.md`.
 ### Running Tests
 
 ```bash
-# Full suite (725 tests, ~12s on SQLite)
+# Full suite (910+ tests, ~12s on SQLite)
 DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./test.db \
   DATABASE_URL_SYNC=sqlite:///./test.db \
   python -m pytest tests/ -v
@@ -55,12 +55,14 @@ DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./test.db \
 make test
 
 # Specific focus areas:
-python -m pytest tests/test_cross_team_qa.py -v    # 58 invariant/contract tests
-python -m pytest tests/integration/ -v              # 5-persona pipeline tests
-python -m pytest tests/unit/test_scoring.py -v      # Scoring engine unit tests
+python -m pytest tests/test_cross_team_qa.py -v              # 58 invariant/contract tests
+python -m pytest tests/test_anthropic_report_personas.py -v  # 68 Anthropic report persona tests
+python -m pytest tests/test_enrichment_pipeline.py -v        # 31 enrichment pipeline tests
+python -m pytest tests/integration/ -v                       # 5-persona pipeline tests
+python -m pytest tests/unit/test_scoring.py -v               # Scoring engine unit tests
 ```
 
-All 725 tests pass as of this writing. The CI pipeline (`.github/workflows/test.yml`) runs lint, security scan, unit tests, integration tests, E2E tests, and a production image build on every push.
+All 910+ tests pass as of this writing. The CI pipeline (`.github/workflows/test.yml`) runs lint, security scan, unit tests, integration tests, E2E tests, and a production image build on every push.
 
 ### Architecture at a Glance
 
@@ -72,8 +74,60 @@ All 725 tests pass as of this writing. The CI pipeline (`.github/workflows/test.
 | **Explainability** | `app/features/explainability/` | Structured explanations with threshold transparency and "what would change" analysis |
 | **Training paths** | `app/features/training_paths/` | Prerequisite-aware path generation with budget/timeline constraint tracking |
 | **Test personas** | `tests/integration/test_full_pipeline.py` | 5 personas (Maria/nurse, James/retail, Aisha/bootcamp, Robert/mechanic, Sarah/veteran) |
+| **Anthropic report personas** | `tests/test_anthropic_report_personas.py` | 10 personas from the Anthropic Labor Market Report (Derek/programmer, Linda/CSR, Priya/data-entry, Carlos/med-records, Wei/market-research, Tanya/sales, Marcus/QA, Fatima/infosec, Jordan/support, Elena/electrician) |
 | **Cross-team QA** | `tests/test_cross_team_qa.py` | 58 tests covering mathematical invariants, boundary values, monotonicity, input safety, contract alignment |
+| **Data enrichment** | `app/services/enrichment_pipeline.py` | Auto-discovers occupations, fetches skills, scores personas, persists to `occupation_registry.json` |
 | **Architecture decisions** | `docs/adr/ADR-001` through `ADR-006` | Six ADRs documenting scoring, features, cold start, calibration, feedback signals, and bias audit design |
+
+### Anthropic Labor Market Report Integration
+
+SkillSprout incorporates data from the [Anthropic Labor Market Report](https://www.anthropic.com/research/labor-market-impacts) (March 2026), which identifies the occupations most exposed to AI disruption. This data drives both QA testing and user-facing AI exposure indicators.
+
+**10 QA Personas** based on report positions (from highest to lowest AI exposure):
+
+| Persona | Role | AI Exposure | BLS Outlook |
+|---------|------|-------------|-------------|
+| Derek | Computer Programmer | 75% | Declining (-10.6%) |
+| Linda | Customer Service Rep | 70% | Stable |
+| Priya | Data Entry Keyer | 67% | Declining |
+| Carlos | Medical Records Specialist | 67% | Moderate growth |
+| Wei | Market Research Analyst | 65% | Moderate growth |
+| Tanya | Sales Representative | 63% | Stable |
+| Marcus | Software QA Analyst | 52% | Strong growth |
+| Fatima | Information Security Analyst | 49% | Strong growth |
+| Jordan | Computer User Support | 47% | Moderate growth |
+| Elena | Electrician | 0% | Strong growth (+11.4%) |
+
+These personas generate a 10x10 scoring matrix (100 scores) that validates the scoring engine across the full AI-exposure spectrum, from the most automatable white-collar work to AI-resistant trades.
+
+### Data Enrichment Pipeline
+
+The enrichment pipeline automatically discovers, fetches, scores, and persists occupation data:
+
+```
+App Startup / CLI / API Call
+         |
+         v
+  EnrichmentPipeline
+  1. Seed static data (ai_exposure.py, bls_projections.py)
+  2. Discover via O*NET API (20 search queries)
+  3. Fetch missing skills for new occupations
+  4. Score all personas against all occupations
+  5. Persist to app/data/occupation_registry.json
+```
+
+The registry file grows across runs -- each startup enriches the system with any newly discovered occupations. The `get_exposure()` and `get_projections()` functions check the registry first before falling back to static data.
+
+```bash
+# Run manually
+python -m app.services.enrichment_pipeline
+
+# Trigger via API
+curl -X POST http://localhost:8000/api/v1/enrichment/run
+
+# Check registry status
+curl http://localhost:8000/api/v1/enrichment/status
+```
 
 ### What the Combined QA Review Found and Fixed
 
@@ -90,7 +144,8 @@ Two teams with different QA approaches (scenario-driven vs. invariant-driven) me
 1. **Two-stage scoring** (ADR-001): deterministic baseline + learned calibration. Baseline ships now; calibration activates when feedback volume is sufficient (~500 samples).
 2. **Trainable bucket uses OR logic** (match >= 50 OR gap in 26-55). This is intentional — users can enter trainable via either high match with some gaps or low match with targeted gaps.
 3. **Auth disabled in dev** (`AUTH_ENABLED=false`). API key middleware is wired (`app/core/auth.py`); set `AUTH_ENABLED=true` and `API_KEY=<secret>` in production. OAuth2/JWT is roadmap.
-4. **Demo mode** activates when O\*NET credentials are absent. Uses `MockONetClient` with 3 occupations. All tests run in demo mode by default.
+4. **Demo mode** activates when O\*NET credentials are absent. Uses `MockONetClient` with 14+ occupations (expanded with Anthropic report positions). All tests run in demo mode by default.
+6. **Data enrichment pipeline** runs on startup, seeding static data and (when credentials are available) discovering new occupations via O\*NET API. All data persists to `app/data/occupation_registry.json` and grows across runs.
 5. **Privacy**: GDPR data export (`/api/v1/user/{id}/data-export`) and deletion endpoints are implemented. Private mode suppresses all writes. Review with legal before production.
 
 ### Outstanding Questions for Leadership Decision
@@ -363,6 +418,16 @@ curl "http://localhost:8000/api/v1/model/status"
 | GET | `/api/v1/occupations/{code}/ai-exposure` | AI exposure data (Anthropic Economic Index) |
 | GET | `/api/v1/occupations/{code}/bls-projections` | BLS employment projections (2024-2034) |
 
+### Data Enrichment Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/enrichment/status` | Registry summary (occupation counts, last updated) |
+| GET | `/api/v1/enrichment/occupations` | List registry occupations (filterable: `?has_skills=true`) |
+| GET | `/api/v1/enrichment/occupations/{code}` | Full occupation details incl. scoring results |
+| POST | `/api/v1/enrichment/run` | Trigger enrichment pipeline on-demand |
+| GET | `/api/v1/enrichment/run-log` | History of enrichment pipeline runs |
+
 ### Infrastructure Endpoints
 
 | Method | Endpoint | Description |
@@ -500,7 +565,7 @@ skillsprout/
 │   ├── ml/               # Scoring and calibration models
 │   ├── models/           # SQLAlchemy ORM models
 │   ├── schemas/          # Pydantic request/response schemas
-│   ├── services/         # O*NET client, external services
+│   ├── services/         # O*NET client, enrichment pipeline, occupation registry
 │   ├── tasks/            # Celery background tasks
 │   └── main.py           # FastAPI application (46 routes)
 ├── ml/
@@ -512,7 +577,7 @@ skillsprout/
 │   └── transition_graph/ # NetworkX career path graph
 ├── alembic/              # Database migrations
 ├── docs/                 # Audits, ADRs, guides
-├── tests/                # 600+ unit and integration tests
+├── tests/                # 910+ unit, integration, and persona tests
 ├── templates/            # HTML templates
 ├── static/               # CSS, JS
 └── requirements.txt      # Python dependencies
@@ -533,13 +598,23 @@ alembic downgrade -1
 
 ### Adding New Occupations
 
-```python
-# In Python shell or script
-from app.tasks.tasks import warm_occupation_cache
+The enrichment pipeline automatically discovers and persists new occupations:
 
-# Add specific occupations
-warm_occupation_cache(["19-1021.00", "29-1141.00"])
+```bash
+# Option A: Run the enrichment pipeline (discovers, fetches skills, scores)
+python -m app.services.enrichment_pipeline
+
+# Option B: Skip O*NET discovery, just seed static data and score
+python -m app.services.enrichment_pipeline --skip-discovery
+
+# Option C: Trigger via API (while server is running)
+curl -X POST http://localhost:8000/api/v1/enrichment/run
+
+# Option D: Manual cache warming (legacy)
+python -c "from app.tasks.tasks import warm_occupation_cache; warm_occupation_cache(['19-1021.00'])"
 ```
+
+The enrichment pipeline persists all data to `app/data/occupation_registry.json`, which grows across runs. It also runs automatically on app startup.
 
 ## Configuration
 
@@ -575,7 +650,7 @@ To use real O*NET data:
    DEMO_MODE=false
    ```
 
-Without credentials, the app runs in demo mode with 3 mock occupations.
+Without credentials, the app runs in demo mode with 14+ mock occupations (including all positions from the Anthropic Labor Market Report).
 
 ## Production Considerations
 
@@ -715,7 +790,7 @@ A 5-day virtual hackathon sprint executed by a single AI engineer (Claude, Opus 
 
 ### Where Things Stand Now
 
-**Fully wired, tested, and working (46 routes, 600+ tests passing):**
+**Fully wired, tested, and working (46 routes, 910+ tests passing):**
 - All 14 new API routers mounted in `app/main.py` with correct prefix handling
 - API key authentication middleware (`app/core/auth.py`, disabled in dev, required in prod)
 - Full scoring pipeline with transition-aware features
@@ -757,7 +832,7 @@ The following 7 open questions were resolved by the 3-engineer team (E1 ML, E2 U
 **P1 — Integration wiring: DONE**
 - [x] All 14 routers mounted in `app/main.py`
 - [x] DeletionAuditLog registered in `alembic/env.py` for migration generation
-- [x] Full test suite passes (600+ tests, 0 failures)
+- [x] Full test suite passes (910+ tests, 0 failures)
 
 **P2 — Functional testing: DONE**
 - [x] Skills Translator validated with real-world input strings
@@ -785,7 +860,7 @@ The following 7 open questions were resolved by the 3-engineer team (E1 ML, E2 U
 
 - [x] ~~Wire new routers into `app/main.py`~~ (done)
 - [x] ~~API key authentication~~ (done, `app/core/auth.py`)
-- [x] ~~Run full test suite and fix failures~~ (600+ tests passing)
+- [x] ~~Run full test suite and fix failures~~ (910+ tests passing)
 - [x] ~~Generate Alembic migration for DeletionAuditLog~~ (registered in env.py)
 - [ ] OAuth2/JWT authentication (upgrade from API key)
 - [ ] Partner with one training provider for verified catalog data
@@ -793,6 +868,8 @@ The following 7 open questions were resolved by the 3-engineer team (E1 ML, E2 U
 - [ ] Learning-to-rank model (LambdaMART) using pairwise data (needs ~500 records)
 - [ ] Geographic training resource integration (ZIP to program mapping)
 - [x] ~~BLS labor market data integration~~ (done, `app/data/bls_projections.py`)
+- [x] ~~Anthropic Labor Market Report QA personas~~ (done, 10 personas, 68 tests in `tests/test_anthropic_report_personas.py`)
+- [x] ~~Data enrichment pipeline~~ (done, auto-discovers occupations, persists to JSON registry, `app/services/enrichment_pipeline.py`)
 - [x] ~~Career Transition Report Generator~~ (in-browser, Claude API-powered) — deployed at `docs/github-pages/report.html`
 - [ ] Load testing (target: 100 concurrent users)
 - [ ] Transition graph visualization (D3, needs sufficient user volume)
@@ -828,6 +905,8 @@ This site incorporates information from O*NET Web Services by the U.S. Departmen
 | [Modeling Notes](MODELING_NOTES.md) | Detailed scoring formulas |
 | [Docker Testing](DOCKER_TESTING.md) | Docker test environment guide |
 | [Career Report](docs/github-pages/report.html) | In-browser career transition report (Claude API) |
+| [Anthropic Report Personas](tests/test_anthropic_report_personas.py) | 10 QA personas from Anthropic Labor Market Report |
+| [Enrichment Pipeline](app/services/enrichment_pipeline.py) | Auto-discovery and persistence of occupation data |
 
 ## Support
 
