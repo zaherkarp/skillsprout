@@ -36,6 +36,9 @@ from app.core.monitoring.health_checks import mark_startup
 # -- Prometheus metrics (mounted at root for scraping) --------------------
 from app.core.monitoring.metrics import metrics_router
 
+# -- Data enrichment pipeline ---------------------------------------------
+from app.services.enrichment_api import router as enrichment_router
+
 # -- Authentication middleware --------------------------------------------
 from app.core.auth import APIKeyAuthMiddleware
 
@@ -59,6 +62,18 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.env}")
     logger.info(f"Demo mode: {settings.is_demo_mode}")
     mark_startup()
+
+    # Run data enrichment pipeline on startup
+    try:
+        from app.services.enrichment_pipeline import EnrichmentPipeline
+        from app.services.occupation_registry import OccupationRegistry
+        pipeline = EnrichmentPipeline(
+            registry=OccupationRegistry(),
+        )
+        result = await pipeline.run(skip_discovery=settings.is_demo_mode)
+        logger.info(f"Enrichment pipeline: {result}")
+    except Exception as e:
+        logger.warning(f"Enrichment pipeline skipped: {e}")
 
     yield
 
@@ -123,6 +138,9 @@ app.include_router(health_router)
 
 # Prometheus metrics — mount at root for scraping
 app.include_router(metrics_router)
+
+# Data enrichment pipeline
+app.include_router(enrichment_router, prefix="/api/v1")
 
 
 # ==================== UI Routes ====================

@@ -34,3 +34,11 @@ python -m http.server 4173
 4. Save and wait for deployment.
 
 The site will then be hosted on `https://<org-or-user>.github.io/<repo>/`.
+
+## Career Transition Report Generator
+
+`report.html` is an in-browser career transition report generator powered by the Claude API.
+
+- **Structured data** (skills profile, BLS labor market table, recommendation cards) renders immediately without any API call.
+- **Narrative sections** (executive summary, labor market context, next steps) require a network connection and an Anthropic API key to call the Claude API at runtime.
+- If the Claude API is unavailable or no API key is provided, the report still renders all structured data sections with a warning banner.

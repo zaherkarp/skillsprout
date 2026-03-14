@@ -81,6 +81,14 @@ Training resources are defined in `app/features/training_paths/training_catalog.
 4. Add the `last_verified` date
 5. Test that the path generator includes it appropriately
 
+### Updating AI Exposure and BLS Data
+
+The AI exposure data (`app/data/ai_exposure.py`) and BLS projections (`app/data/bls_projections.py`) should be refreshed when new Anthropic Economic Index reports are published or BLS projections are updated. When updating:
+
+1. Update the dictionaries with new values from the source reports
+2. Run `python -m pytest tests/unit/test_ai_exposure.py tests/unit/test_bls_projections.py -v` to verify consistency
+3. Update the report generator persona data in `docs/github-pages/report.html` if affected occupations change
+
 ### Adding Bias Audit Improvements
 
 The bias audit framework is in `ml/bias_audit/`. Contributions welcome:
