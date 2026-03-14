@@ -21,7 +21,7 @@ from app.schemas.schemas import (
     RecommendationRequest, RecommendationResponse, RecommendationBucket,
     RecommendedOccupation as RecommendedOccupationSchema, SkillGapInfo,
     UserFeedbackRequest, UserFeedbackResponse, ModelStatusResponse, ModelMetrics,
-    HealthCheckResponse,
+    HealthCheckResponse, AIExposureResponse, BLSProjectionsResponse,
 )
 from app.services.onet_client import get_onet_client, ONetClientError
 from app.ml.scoring import get_baseline_scorer
@@ -747,3 +747,48 @@ async def get_model_status(db: AsyncSession = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error getting model status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== AI Exposure & BLS Endpoints ====================
+
+@router.get(
+    "/occupations/{onet_code}/ai-exposure",
+    response_model=AIExposureResponse,
+)
+async def get_ai_exposure(onet_code: str):
+    """Get AI exposure data for an occupation."""
+    from app.data.ai_exposure import get_exposure
+
+    data = get_exposure(onet_code)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No AI exposure data for {onet_code}")
+
+    return AIExposureResponse(
+        onet_code=onet_code,
+        theoretical_exposure=data["theoretical_exposure"],
+        observed_exposure=data["observed_exposure"],
+        exposure_rank=data["exposure_rank"],
+        ai_resilience_score=round(100 * (1 - data["observed_exposure"]), 1),
+        ai_headroom=round(data["theoretical_exposure"] - data["observed_exposure"], 2),
+    )
+
+
+@router.get(
+    "/occupations/{onet_code}/bls-projections",
+    response_model=BLSProjectionsResponse,
+)
+async def get_bls_projections(onet_code: str):
+    """Get BLS employment projections for an occupation."""
+    from app.data.bls_projections import get_projections
+
+    data = get_projections(onet_code)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No BLS data for {onet_code}")
+
+    return BLSProjectionsResponse(
+        onet_code=onet_code,
+        projected_growth_pct=data["projected_growth_pct"],
+        projected_openings_annual=data["projected_openings_annual"],
+        current_employment=data["current_employment"],
+        outlook=data["outlook"],
+    )

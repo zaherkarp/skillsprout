@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillSprout Career Transition Report</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef } = React;
+
+    // =============================================================================
+    // DATA LAYER
+    // All structured data that would come from the SkillSprout API in production.
+    // For this standalone artifact, it's hardcoded to match the O*NET-backed
+    // data model described in the SkillSprout README and the Anthropic report's
+    // exposure findings.
+    // =============================================================================
+    const PERSONAS = {
+      maria_nurse: {
+        name: "Maria",
+        currentOccupation: { code: "29-1141.00", title: "Registered Nurses", jobZone: 4 },
+        skills: [
+          { id: "2.B.1.a", name: "Reading Comprehension", rating: 4, importance: 4.12 },
+          { id: "2.B.1.b", name: "Active Listening", rating: 4, importance: 4.12 },
+          { id: "2.B.1.c", name: "Writing", rating: 3, importance: 3.50 },
+          { id: "2.B.1.d", name: "Speaking", rating: 4, importance: 4.00 },
+          { id: "2.B.1.e", name: "Mathematics", rating: 2, importance: 2.75 },
+          { id: "2.B.1.f", name: "Science", rating: 3, importance: 3.62 },
+          { id: "2.B.3.a", name: "Critical Thinking", rating: 4, importance: 4.25 },
+          { id: "2.B.3.b", name: "Active Learning", rating: 3, importance: 3.75 },
+          { id: "2.B.3.d", name: "Monitoring", rating: 4, importance: 3.88 },
+          { id: "2.B.4.g", name: "Decision Making", rating: 4, importance: 4.12 },
+          { id: "2.B.5.a", name: "Social Perceptiveness", rating: 4, importance: 4.00 },
+          { id: "2.B.5.b", name: "Coordination", rating: 3, importance: 3.62 },
+        ],
+        recommendations: [
+          {
+            code: "29-1171.00",
+            title: "Nurse Practitioners",
+            bucket: "TRAINABLE",
+            matchScore: 72,
+            gapSeverity: 28,
+            gapSkills: ["Prescribing", "Diagnostic Reasoning", "Pharmacology"],
+            bls: { growthPct: 40.2, annualOpenings: 30200, currentEmployment: 264800, outlook: "strong growth" },
+            training: {
+              path: "Master of Science in Nursing (MSN) with NP specialization",
+              duration: "2-3 years part-time",
+              estimatedCost: "$35,000-$65,000",
+              resources: [
+                "AANP: American Association of Nurse Practitioners certification",
+                "Chamberlain University online MSN-FNP",
+                "Walden University MSN program"
+              ]
+            }
+          },
+          {
+            code: "29-9092.00",
+            title: "Genetic Counselors",
+            bucket: "TRAINABLE",
+            matchScore: 58,
+            gapSeverity: 38,
+            gapSkills: ["Genetics Knowledge", "Statistical Analysis", "Research Methods"],
+            bls: { growthPct: 18.5, annualOpenings: 1100, currentEmployment: 5200, outlook: "strong growth" },
+            training: {
+              path: "Master's in Genetic Counseling (ACGC-accredited)",
+              duration: "2 years full-time",
+              estimatedCost: "$40,000-$80,000",
+              resources: [
+                "ABGC Board Certification pathway",
+                "NSGC: National Society of Genetic Counselors resources",
+                "Coursera: Genomic Medicine fundamentals"
+              ]
+            }
+          },
+          {
+            code: "11-9111.00",
+            title: "Medical and Health Services Managers",
+            bucket: "READY_NOW",
+            matchScore: 78,
+            gapSeverity: 18,
+            gapSkills: ["Financial Management", "Regulatory Compliance"],
+            bls: { growthPct: 28.4, annualOpenings: 61400, currentEmployment: 571700, outlook: "strong growth" },
+            training: {
+              path: "Healthcare administration certificate or MBA in Healthcare",
+              duration: "6-18 months (certificate) or 2 years (MBA)",
+              estimatedCost: "$5,000-$15,000 (cert) or $30,000-$80,000 (MBA)",
+              resources: [
+                "ACHE: American College of Healthcare Executives fellowship",
+                "Cornell Healthcare Leadership certificate (online)",
+                "edX: MicroMasters in Healthcare Management"
+              ]
+            }
+          },
+          {
+            code: "21-1094.00",
+            title: "Community Health Workers",
+            bucket: "READY_NOW",
+            matchScore: 85,
+            gapSeverity: 12,
+            gapSkills: ["Community Outreach Methods"],
+            bls: { growthPct: 14.0, annualOpenings: 12200, currentEmployment: 68500, outlook: "strong growth" },
+            training: {
+              path: "Community Health Worker certification (state-specific)",
+              duration: "3-6 months",
+              estimatedCost: "$500-$3,000",
+              resources: [
+                "State CHW certification boards",
+                "APHA Community Health Worker section",
+                "CDC Community Health Worker resources"
+              ]
+            }
+          },
+          {
+            code: "15-2051.00",
+            title: "Data Scientists",
+            bucket: "LONG_RESKILL",
+            matchScore: 35,
+            gapSeverity: 62,
+            gapSkills: ["Programming", "Machine Learning", "Statistical Modeling", "Database Management"],
+            bls: { growthPct: 35.2, annualOpenings: 20800, currentEmployment: 192300, outlook: "strong growth" },
+            training: {
+              path: "Data science bootcamp followed by MS in Data Science",
+              duration: "3-4 years total",
+              estimatedCost: "$15,000-$70,000",
+              resources: [
+                "Google Data Analytics Professional Certificate",
+                "Georgia Tech OMSA (Online MS Analytics)",
+                "DataCamp or Codecademy for foundational Python/R"
+              ]
+            }
+          }
+        ]
+      },
+      james_retail: {
+        name: "James",
+        currentOccupation: { code: "41-1011.00", title: "First-Line Supervisors of Retail Sales Workers", jobZone: 3 },
+        skills: [
+          { id: "2.B.1.a", name: "Reading Comprehension", rating: 3, importance: 3.50 },
+          { id: "2.B.1.b", name: "Active Listening", rating: 3, importance: 3.75 },
+          { id: "2.B.1.d", name: "Speaking", rating: 4, importance: 4.00 },
+          { id: "2.B.1.e", name: "Mathematics", rating: 2, importance: 2.50 },
+          { id: "2.B.3.a", name: "Critical Thinking", rating: 3, importance: 3.50 },
+          { id: "2.B.4.e", name: "Negotiation", rating: 3, importance: 3.38 },
+          { id: "2.B.4.g", name: "Decision Making", rating: 3, importance: 3.62 },
+          { id: "2.B.5.a", name: "Social Perceptiveness", rating: 3, importance: 3.50 },
+          { id: "2.B.5.d", name: "Persuasion", rating: 4, importance: 3.75 },
+          { id: "2.B.7.a", name: "Time Management", rating: 3, importance: 3.88 },
+        ],
+        recommendations: [
+          {
+            code: "13-1161.00",
+            title: "Market Research Analysts",
+            bucket: "TRAINABLE",
+            matchScore: 55,
+            gapSeverity: 40,
+            gapSkills: ["Statistical Analysis", "Data Visualization", "Research Design"],
+            bls: { growthPct: 13.4, annualOpenings: 99800, currentEmployment: 965600, outlook: "strong growth" },
+            training: {
+              path: "Google Data Analytics certificate + market research specialization",
+              duration: "6-12 months",
+              estimatedCost: "$3,000-$10,000",
+              resources: [
+                "Google Data Analytics Professional Certificate",
+                "Insights Association certifications",
+                "Coursera: Market Research Specialization (UC Davis)"
+              ]
+            }
+          },
+          {
+            code: "11-2022.00",
+            title: "Sales Managers",
+            bucket: "READY_NOW",
+            matchScore: 82,
+            gapSeverity: 15,
+            gapSkills: ["CRM Systems", "Sales Forecasting"],
+            bls: { growthPct: 4.2, annualOpenings: 45200, currentEmployment: 469800, outlook: "moderate growth" },
+            training: {
+              path: "Sales management certification + CRM platform training",
+              duration: "3-6 months",
+              estimatedCost: "$1,000-$5,000",
+              resources: [
+                "Salesforce Administrator certification",
+                "HubSpot Sales Management certificate",
+                "NASP: Certified Professional Sales Leader"
+              ]
+            }
+          },
+          {
+            code: "13-1199.06",
+            title: "Online Merchants",
+            bucket: "TRAINABLE",
+            matchScore: 60,
+            gapSeverity: 35,
+            gapSkills: ["E-commerce Platforms", "Digital Marketing", "SEO/SEM"],
+            bls: { growthPct: 9.8, annualOpenings: 5600, currentEmployment: 42300, outlook: "moderate growth" },
+            training: {
+              path: "E-commerce management bootcamp or certificate",
+              duration: "3-9 months",
+              estimatedCost: "$2,000-$8,000",
+              resources: [
+                "Shopify Partner Academy",
+                "Google Digital Garage",
+                "Coursera: E-Commerce Essentials (Univ. of Illinois)"
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    // =============================================================================
+    // BUCKET STYLING
+    // =============================================================================
+    const BUCKET_CONFIG = {
+      READY_NOW:    { label: "Ready Now",    color: "#1a7a4c", bg: "#e6f4ed", icon: "check" },
+      TRAINABLE:    { label: "Trainable",    color: "#b8860b", bg: "#fdf6e3", icon: "trending" },
+      LONG_RESKILL: { label: "Long Reskill", color: "#9b2c2c", bg: "#fde8e8", icon: "clock" },
+    };
+
+    // =============================================================================
+    // CLAUDE API INTEGRATION
+    // =============================================================================
+    async function generateNarrative(apiKey, persona) {
+      const recSummary = persona.recommendations.map(r => ({
+        title: r.title,
+        bucket: r.bucket,
+        match: r.matchScore,
+        gap: r.gapSeverity,
+        gapSkills: r.gapSkills,
+        blsGrowth: r.bls.growthPct,
+        blsOutlook: r.bls.outlook,
+        annualOpenings: r.bls.annualOpenings,
+        trainingPath: r.training.path,
+        trainingDuration: r.training.duration,
+        trainingCost: r.training.estimatedCost,
+      }));
+
+      const skillSummary = [...persona.skills]
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 6)
+        .map(s => `${s.name}: ${s.rating}/4`);
+
+      const prompt = `You are a career counselor writing a personalized career transition report for ${persona.name}, currently working as a ${persona.currentOccupation.title}.
+
+Their top skills (self-rated on a 0-4 scale): ${skillSummary.join(", ")}
+
+Their recommended career transitions (from the SkillSprout matching engine):
+${JSON.stringify(recSummary, null, 2)}
+
+Write a report with these exact JSON keys. Each value should be a string of 2-4 sentences, written in second person ("you"), warm but professional tone. Do not use markdown formatting inside the strings. Do not use em dashes. Do not ask rhetorical questions.
+
+{
+  "executive_summary": "A high-level overview of the person's career position, strongest transferable skills, and the overall landscape of their transition options.",
+  "ready_now_narrative": "Analysis of the Ready Now recommendations. Why these are immediately accessible. What makes the person's existing skills a strong fit. Only discuss occupations with bucket READY_NOW.",
+  "trainable_narrative": "Analysis of the Trainable recommendations. What training investment is needed and whether it's worthwhile given BLS projections. Only discuss occupations with bucket TRAINABLE.",
+  "long_reskill_narrative": "Analysis of any Long Reskill options. Be honest about the time and cost commitment. Frame it in terms of whether the labor market projections justify the investment. Only discuss occupations with bucket LONG_RESKILL, or write 'None of your current recommendations fall into the long reskill category.' if there are none.",
+  "labor_market_context": "A synthesis of the BLS employment projections across all recommendations. Which fields are growing fastest? Where is competition likely to be highest? What does the annual openings number tell us about practical job availability?",
+  "next_steps": "Three to five concrete, specific actions the person should take in the next 30 days to begin their strongest transition. Be specific: name the certifications, websites, or programs. Number them 1, 2, 3, etc.",
+  "closing": "An encouraging but grounded closing statement. Acknowledge the work ahead without being patronizing."
+}
+
+Respond with ONLY the JSON object. No preamble, no markdown backticks, no explanation outside the JSON.`;
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const textContent = data.content
+        ?.filter(block => block.type === "text")
+        .map(block => block.text)
+        .join("");
+
+      if (!textContent) throw new Error("No text in response");
+
+      const cleaned = textContent.replace(/```json|```/g, "").trim();
+      return JSON.parse(cleaned);
+    }
+
+    // =============================================================================
+    // COMPONENTS
+    // =============================================================================
+
+    function SkillBar({ name, rating, importance }) {
+      const pct = (rating / 4) * 100;
+      const impNorm = Math.min(importance / 5, 1);
+      return (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+            <span style={{ fontSize: 13, fontFamily: "'Source Serif 4', Georgia, serif", color: "#2d2d2d" }}>{name}</span>
+            <span style={{ fontSize: 12, fontFamily: "'DM Mono', monospace", color: "#666" }}>{rating}/4</span>
+          </div>
+          <div style={{ height: 6, background: "#e8e4de", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${pct}%`,
+              background: `rgba(26, 78, 92, ${0.4 + impNorm * 0.6})`,
+              borderRadius: 3,
+              transition: "width 0.8s ease",
+            }} />
+          </div>
+        </div>
+      );
+    }
+
+    function MetricPill({ label, value, good, invert }) {
+      const isPositive = invert ? !good : good;
+      const color = good === undefined ? "#444" : isPositive ? "#1a7a4c" : "#b8860b";
+      return (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: "#888", fontFamily: "'DM Sans', Helvetica, sans-serif", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>
+            {label}
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'DM Mono', monospace", color }}>{value}</div>
+        </div>
+      );
+    }
+
+    function RecommendationCard({ rec, index }) {
+      const bucket = BUCKET_CONFIG[rec.bucket];
+      return (
+        <div style={{
+          background: "#fff",
+          border: "1px solid #d6d0c4",
+          borderRadius: 6,
+          padding: "20px 24px",
+          marginBottom: 16,
+          animation: `fadeSlideUp 0.5s ease ${0.1 * index}s both`,
+          pageBreakInside: "avoid",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18, fontFamily: "'Source Serif 4', Georgia, serif", color: "#1a1a1a" }}>
+                {rec.title}
+              </h3>
+              <span style={{ fontSize: 12, fontFamily: "'DM Mono', monospace", color: "#888" }}>{rec.code}</span>
+            </div>
+            <span style={{
+              display: "inline-block",
+              padding: "4px 12px",
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "'DM Sans', Helvetica, sans-serif",
+              color: bucket.color,
+              background: bucket.bg,
+              border: `1px solid ${bucket.color}33`,
+              whiteSpace: "nowrap",
+            }}>
+              {bucket.label}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
+            <MetricPill label="Match" value={`${rec.matchScore}%`} good={rec.matchScore >= 75} />
+            <MetricPill label="Gap" value={`${rec.gapSeverity}%`} good={rec.gapSeverity <= 25} invert />
+            <MetricPill label="BLS Growth" value={`${rec.bls.growthPct}%`} good={rec.bls.growthPct >= 8} />
+            <MetricPill label="Annual Openings" value={rec.bls.annualOpenings.toLocaleString()} />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#666", fontFamily: "'DM Sans', Helvetica, sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Skills to Develop
+            </span>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              {rec.gapSkills.map(skill => (
+                <span key={skill} style={{
+                  padding: "3px 10px",
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontFamily: "'DM Mono', monospace",
+                  background: "#f5f0e8",
+                  color: "#5a4e3a",
+                  border: "1px solid #e0d8c8",
+                }}>
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: "#faf8f4", borderRadius: 4, padding: "12px 16px", border: "1px solid #ece8de" }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#666", fontFamily: "'DM Sans', Helvetica, sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Training Path
+            </span>
+            <p style={{ margin: "6px 0 4px", fontSize: 14, fontFamily: "'Source Serif 4', Georgia, serif", color: "#2d2d2d" }}>
+              {rec.training.path}
+            </p>
+            <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#777", fontFamily: "'DM Mono', monospace" }}>
+              <span>{rec.training.duration}</span>
+              <span>{rec.training.estimatedCost}</span>
+            </div>
+            <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 13, color: "#555", fontFamily: "'DM Sans', Helvetica, sans-serif" }}>
+              {rec.training.resources.map(r => (
+                <li key={r} style={{ marginBottom: 3 }}>{r}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    function NarrativeSection({ title, text, accent }) {
+      if (!text) return null;
+      return (
+        <div style={{ marginBottom: 28, pageBreakInside: "avoid" }}>
+          {title && (
+            <h2 style={{
+              fontSize: 15,
+              fontFamily: "'DM Sans', Helvetica, sans-serif",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: accent || "#1a4e5c",
+              margin: "0 0 10px",
+              paddingBottom: 8,
+              borderBottom: `2px solid ${accent || "#1a4e5c"}22`,
+            }}>
+              {title}
+            </h2>
+          )}
+          <p style={{
+            fontSize: 15,
+            lineHeight: 1.7,
+            fontFamily: "'Source Serif 4', Georgia, serif",
+            color: "#2d2d2d",
+            margin: 0,
+            whiteSpace: "pre-line",
+          }}>
+            {text}
+          </p>
+        </div>
+      );
+    }
+
+    function BLSTable({ recommendations }) {
+      const sorted = [...recommendations].sort((a, b) => b.bls.growthPct - a.bls.growthPct);
+      return (
+        <div style={{ overflowX: "auto", marginBottom: 24 }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontFamily: "'DM Sans', Helvetica, sans-serif",
+            fontSize: 13,
+          }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid #1a4e5c" }}>
+                {["Occupation", "Growth (2024-34)", "Annual Openings", "Employment", "Outlook"].map(h => (
+                  <th key={h} style={{
+                    textAlign: "left",
+                    padding: "8px 12px",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: "#1a4e5c",
+                    fontWeight: 700,
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((r, i) => (
+                <tr key={r.code} style={{ borderBottom: "1px solid #e8e4de", background: i % 2 === 0 ? "#faf8f4" : "#fff" }}>
+                  <td style={{ padding: "10px 12px", fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600 }}>{r.title}</td>
+                  <td style={{ padding: "10px 12px", fontFamily: "'DM Mono', monospace", color: r.bls.growthPct >= 8 ? "#1a7a4c" : "#666" }}>
+                    +{r.bls.growthPct}%
+                  </td>
+                  <td style={{ padding: "10px 12px", fontFamily: "'DM Mono', monospace" }}>{r.bls.annualOpenings.toLocaleString()}</td>
+                  <td style={{ padding: "10px 12px", fontFamily: "'DM Mono', monospace" }}>{r.bls.currentEmployment.toLocaleString()}</td>
+                  <td style={{ padding: "10px 12px" }}>
+                    <span style={{
+                      padding: "2px 8px",
+                      borderRadius: 3,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: r.bls.outlook === "strong growth" ? "#e6f4ed" : "#fdf6e3",
+                      color: r.bls.outlook === "strong growth" ? "#1a7a4c" : "#b8860b",
+                    }}>
+                      {r.bls.outlook}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    function LoadingSkeleton() {
+      return (
+        <div style={{ padding: "40px 0" }}>
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} style={{ marginBottom: 28 }}>
+              <div style={{
+                height: 14,
+                width: 160,
+                background: "#e8e4de",
+                borderRadius: 3,
+                marginBottom: 12,
+                animation: "pulse 1.5s ease infinite",
+              }} />
+              <div style={{
+                height: 60,
+                background: "#f0ece4",
+                borderRadius: 4,
+                animation: `pulse 1.5s ease ${0.2 * i}s infinite`,
+              }} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // =============================================================================
+    // MAIN APP
+    // =============================================================================
+    function SkillSproutReport() {
+      const [selectedPersona, setSelectedPersona] = useState(null);
+      const [narrative, setNarrative] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [apiKey, setApiKey] = useState("");
+      const reportRef = useRef(null);
+
+      async function handleGenerate(personaKey) {
+        setSelectedPersona(personaKey);
+        setNarrative(null);
+        setError(null);
+        setLoading(true);
+
+        const storedKey = apiKey || localStorage.getItem("skillsprout_api_key") || "";
+        if (!storedKey) {
+          setError("No API key provided. The structured data is still displayed below. Enter an Anthropic API key to generate narrative sections.");
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const result = await generateNarrative(storedKey, PERSONAS[personaKey]);
+          if (result) {
+            setNarrative(result);
+          } else {
+            setError("The Claude API call did not return a valid response. The structured data is still displayed below.");
+          }
+        } catch (err) {
+          console.error("Claude API error:", err);
+          setError(`Claude API call failed: ${err.message}. The structured data is still displayed below.`);
+        }
+        setLoading(false);
+      }
+
+      function handleApiKeyChange(e) {
+        const key = e.target.value;
+        setApiKey(key);
+        localStorage.setItem("skillsprout_api_key", key);
+      }
+
+      function handlePrint() {
+        window.print();
+      }
+
+      const persona = selectedPersona ? PERSONAS[selectedPersona] : null;
+
+      const byBucket = persona
+        ? {
+            ready: persona.recommendations.filter(r => r.bucket === "READY_NOW"),
+            trainable: persona.recommendations.filter(r => r.bucket === "TRAINABLE"),
+            longReskill: persona.recommendations.filter(r => r.bucket === "LONG_RESKILL"),
+          }
+        : {};
+
+      return (
+        <div style={{
+          minHeight: "100vh",
+          background: "#f5f0e8",
+          fontFamily: "'DM Sans', Helvetica, sans-serif",
+        }}>
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+            @keyframes fadeSlideUp {
+              from { opacity: 0; transform: translateY(12px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 0.5; }
+              50%      { opacity: 0.8; }
+            }
+            @media print {
+              body { background: #fff !important; }
+              .no-print { display: none !important; }
+              .report-container {
+                box-shadow: none !important;
+                border: none !important;
+              }
+            }
+          `}</style>
+
+          {/* PERSONA SELECTOR */}
+          {!selectedPersona && (
+            <div style={{
+              maxWidth: 640,
+              margin: "0 auto",
+              padding: "80px 24px",
+              textAlign: "center",
+              animation: "fadeSlideUp 0.5s ease both",
+            }}>
+              <h1 style={{
+                fontSize: 36,
+                fontFamily: "'Source Serif 4', Georgia, serif",
+                fontWeight: 700,
+                color: "#1a4e5c",
+                margin: "0 0 8px",
+              }}>
+                SkillSprout
+              </h1>
+              <p style={{ fontSize: 14, color: "#888", fontFamily: "'DM Mono', monospace", margin: "0 0 40px" }}>
+                Career Transition Report Generator
+              </p>
+              <p style={{ fontSize: 16, color: "#555", lineHeight: 1.7, marginBottom: 32, fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                Select a persona to generate a personalized career transition report.
+                The report combines SkillSprout's O*NET-based skill matching with
+                BLS employment projections and Claude-generated narrative analysis.
+              </p>
+
+              <div style={{
+                maxWidth: 500,
+                margin: "0 auto 32px",
+                padding: "16px 24px",
+                background: "#fff",
+                border: "1px solid #e8e4de",
+                borderRadius: 8,
+                textAlign: "left",
+              }}>
+                <label htmlFor="api-key" style={{ fontSize: 13, fontWeight: 500, color: "#666" }}>
+                  Anthropic API Key (optional)
+                </label>
+                <input
+                  id="api-key"
+                  type="password"
+                  placeholder="sk-ant-..."
+                  value={apiKey || localStorage.getItem("skillsprout_api_key") || ""}
+                  onChange={handleApiKeyChange}
+                  style={{
+                    width: "100%",
+                    marginTop: 6,
+                    padding: "8px 12px",
+                    border: "1px solid #d6d0c4",
+                    borderRadius: 6,
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 13,
+                  }}
+                />
+                <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
+                  Required for AI-generated narrative sections. Stored locally in your browser.
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+                {Object.entries(PERSONAS).map(([key, p]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleGenerate(key)}
+                    style={{
+                      padding: "16px 28px",
+                      border: "2px solid #1a4e5c",
+                      borderRadius: 6,
+                      background: "#fff",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      fontFamily: "'DM Sans', Helvetica, sans-serif",
+                      color: "#1a4e5c",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "#1a4e5c";
+                      e.currentTarget.style.color = "#fff";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.color = "#1a4e5c";
+                    }}
+                  >
+                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{p.name}</div>
+                    <div style={{ fontSize: 12, opacity: 0.8 }}>{p.currentOccupation.title}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* GENERATED REPORT */}
+          {persona && (
+            <div ref={reportRef} style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px 80px" }}>
+              {/* Toolbar */}
+              <div className="no-print" style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+                <button
+                  onClick={() => { setSelectedPersona(null); setNarrative(null); setError(null); }}
+                  style={{
+                    padding: "8px 16px",
+                    border: "1px solid #ccc",
+                    borderRadius: 4,
+                    background: "#fff",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontFamily: "'DM Sans', Helvetica, sans-serif",
+                  }}
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handlePrint}
+                  style={{
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: 4,
+                    background: "#1a4e5c",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: "'DM Sans', Helvetica, sans-serif",
+                  }}
+                >
+                  Print Report
+                </button>
+              </div>
+
+              {/* Report container */}
+              <div className="report-container" style={{
+                background: "#fff",
+                borderRadius: 8,
+                boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
+                border: "1px solid #e0d8c8",
+                overflow: "hidden",
+              }}>
+                {/* Report header */}
+                <div style={{
+                  background: "linear-gradient(135deg, #1a4e5c 0%, #2a6e7e 100%)",
+                  padding: "40px 40px 32px",
+                  color: "#fff",
+                }}>
+                  <div style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", opacity: 0.7, marginBottom: 4 }}>
+                    SKILLSPROUT CAREER TRANSITION REPORT
+                  </div>
+                  <h1 style={{
+                    fontSize: 28,
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontWeight: 700,
+                    margin: "0 0 6px",
+                  }}>
+                    {persona.name}'s Career Pathway Analysis
+                  </h1>
+                  <p style={{ fontSize: 15, margin: 0, opacity: 0.85, fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                    Current role: {persona.currentOccupation.title} ({persona.currentOccupation.code})
+                  </p>
+                  <div style={{ fontSize: 12, fontFamily: "'DM Mono', monospace", opacity: 0.6, marginTop: 12 }}>
+                    Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                  </div>
+                </div>
+
+                {/* Report body */}
+                <div style={{ padding: "32px 40px" }}>
+                  {/* Skills Profile */}
+                  <div style={{ marginBottom: 36 }}>
+                    <h2 style={{
+                      fontSize: 15,
+                      fontFamily: "'DM Sans', Helvetica, sans-serif",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#1a4e5c",
+                      margin: "0 0 16px",
+                      paddingBottom: 8,
+                      borderBottom: "2px solid #1a4e5c22",
+                    }}>
+                      Skills Profile
+                    </h2>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 32px" }}>
+                      {[...persona.skills]
+                        .sort((a, b) => b.rating - a.rating)
+                        .map(s => (
+                          <SkillBar key={s.id} name={s.name} rating={s.rating} importance={s.importance} />
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Loading skeleton */}
+                  {loading && <LoadingSkeleton />}
+
+                  {/* Error */}
+                  {error && (
+                    <div style={{ padding: "12px 16px", background: "#fdf6e3", border: "1px solid #e0d8c8", borderRadius: 4, marginBottom: 24, fontSize: 13, color: "#b8860b" }}>
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Executive Summary */}
+                  {narrative && (
+                    <NarrativeSection title="Executive Summary" text={narrative.executive_summary} />
+                  )}
+
+                  {/* BLS Labor Market Projections */}
+                  <div style={{ marginBottom: 32 }}>
+                    <h2 style={{
+                      fontSize: 15,
+                      fontFamily: "'DM Sans', Helvetica, sans-serif",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "#1a4e5c",
+                      margin: "0 0 16px",
+                      paddingBottom: 8,
+                      borderBottom: "2px solid #1a4e5c22",
+                    }}>
+                      Labor Market Projections (BLS 2024-2034)
+                    </h2>
+                    <BLSTable recommendations={persona.recommendations} />
+                    {narrative && <NarrativeSection title="Labor Market Context" text={narrative.labor_market_context} accent="#2a6e7e" />}
+                  </div>
+
+                  {/* Ready Now */}
+                  {byBucket.ready.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                      <h2 style={{
+                        fontSize: 15,
+                        fontFamily: "'DM Sans', Helvetica, sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: BUCKET_CONFIG.READY_NOW.color,
+                        margin: "0 0 16px",
+                        paddingBottom: 8,
+                        borderBottom: `2px solid ${BUCKET_CONFIG.READY_NOW.color}22`,
+                      }}>
+                        Ready Now Opportunities
+                      </h2>
+                      {narrative && <NarrativeSection text={narrative.ready_now_narrative} accent={BUCKET_CONFIG.READY_NOW.color} />}
+                      {byBucket.ready.map((r, i) => <RecommendationCard key={r.code} rec={r} index={i} />)}
+                    </div>
+                  )}
+
+                  {/* Trainable */}
+                  {byBucket.trainable.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                      <h2 style={{
+                        fontSize: 15,
+                        fontFamily: "'DM Sans', Helvetica, sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: BUCKET_CONFIG.TRAINABLE.color,
+                        margin: "0 0 16px",
+                        paddingBottom: 8,
+                        borderBottom: `2px solid ${BUCKET_CONFIG.TRAINABLE.color}22`,
+                      }}>
+                        Trainable Opportunities
+                      </h2>
+                      {narrative && <NarrativeSection text={narrative.trainable_narrative} accent={BUCKET_CONFIG.TRAINABLE.color} />}
+                      {byBucket.trainable.map((r, i) => <RecommendationCard key={r.code} rec={r} index={i} />)}
+                    </div>
+                  )}
+
+                  {/* Long Reskill */}
+                  {byBucket.longReskill.length > 0 && (
+                    <div style={{ marginBottom: 32 }}>
+                      <h2 style={{
+                        fontSize: 15,
+                        fontFamily: "'DM Sans', Helvetica, sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: BUCKET_CONFIG.LONG_RESKILL.color,
+                        margin: "0 0 16px",
+                        paddingBottom: 8,
+                        borderBottom: `2px solid ${BUCKET_CONFIG.LONG_RESKILL.color}22`,
+                      }}>
+                        Long-Term Reskill Paths
+                      </h2>
+                      {narrative && <NarrativeSection text={narrative.long_reskill_narrative} accent={BUCKET_CONFIG.LONG_RESKILL.color} />}
+                      {byBucket.longReskill.map((r, i) => <RecommendationCard key={r.code} rec={r} index={i} />)}
+                    </div>
+                  )}
+
+                  {/* Next Steps & Closing */}
+                  {narrative && (
+                    <>
+                      <NarrativeSection title="Your Next Steps (30 Days)" text={narrative.next_steps} accent="#1a4e5c" />
+                      <NarrativeSection text={narrative.closing} accent="#888" />
+                    </>
+                  )}
+
+                  {/* Footer */}
+                  <div style={{
+                    marginTop: 40,
+                    paddingTop: 20,
+                    borderTop: "1px solid #e8e4de",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: 11,
+                    fontFamily: "'DM Mono', monospace",
+                    color: "#aaa",
+                  }}>
+                    <span>SkillSprout Career Transition Report</span>
+                    <span>Data: O*NET, BLS Employment Projections (2024-2034)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<SkillSproutReport />);
+  </script>
+</body>
+</html>
