@@ -176,5 +176,19 @@ DEMOGRAPHIC_CONTEXT: dict[str, float | int] = {
 
 
 def get_exposure(onet_code: str) -> Optional[dict]:
-    """Return the exposure dict for *onet_code*, or None if not found."""
+    """Return the exposure dict for *onet_code*, or None if not found.
+
+    Checks the persistent registry first (if it exists), then falls back
+    to the static EXPOSURE_DATA dictionary.
+    """
+    # Try registry first for dynamically discovered data
+    try:
+        from app.services.occupation_registry import OccupationRegistry, DEFAULT_REGISTRY_PATH
+        if DEFAULT_REGISTRY_PATH.exists():
+            registry = OccupationRegistry(DEFAULT_REGISTRY_PATH)
+            result = registry.get_exposure(onet_code)
+            if result is not None:
+                return result
+    except Exception:
+        pass  # Fall through to static data
     return EXPOSURE_DATA.get(onet_code)

@@ -194,5 +194,19 @@ BLS_PROJECTIONS: dict[str, dict] = {
 
 
 def get_projections(onet_code: str) -> Optional[dict]:
-    """Return the BLS projection dict for *onet_code*, or None if not found."""
+    """Return the BLS projection dict for *onet_code*, or None if not found.
+
+    Checks the persistent registry first (if it exists), then falls back
+    to the static BLS_PROJECTIONS dictionary.
+    """
+    # Try registry first for dynamically discovered data
+    try:
+        from app.services.occupation_registry import OccupationRegistry, DEFAULT_REGISTRY_PATH
+        if DEFAULT_REGISTRY_PATH.exists():
+            registry = OccupationRegistry(DEFAULT_REGISTRY_PATH)
+            result = registry.get_projections(onet_code)
+            if result is not None:
+                return result
+    except Exception:
+        pass  # Fall through to static data
     return BLS_PROJECTIONS.get(onet_code)
