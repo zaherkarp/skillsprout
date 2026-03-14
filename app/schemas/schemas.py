@@ -234,6 +234,27 @@ class DecisionFlowResponse(BaseModel):
     recommendation: str
 
 
+# ==================== AI Exposure Schemas ====================
+
+class AIExposureResponse(BaseModel):
+    """AI exposure data for an occupation."""
+    onet_code: str
+    theoretical_exposure: float
+    observed_exposure: float
+    exposure_rank: str
+    ai_resilience_score: float
+    ai_headroom: float
+
+
+class BLSProjectionsResponse(BaseModel):
+    """BLS employment projections for an occupation."""
+    onet_code: str
+    projected_growth_pct: float
+    projected_openings_annual: int
+    current_employment: int
+    outlook: str
+
+
 # ==================== Error Schemas ====================
 
 class ErrorResponse(BaseModel):

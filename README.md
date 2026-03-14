@@ -360,6 +360,8 @@ curl "http://localhost:8000/api/v1/model/status"
 | DELETE | `/api/v1/user/{id}/data` | Account deletion |
 | POST | `/api/v1/session/export` | Export session token |
 | POST | `/api/v1/session/import` | Resume session |
+| GET | `/api/v1/occupations/{code}/ai-exposure` | AI exposure data (Anthropic Economic Index) |
+| GET | `/api/v1/occupations/{code}/bls-projections` | BLS employment projections (2024-2034) |
 
 ### Infrastructure Endpoints
 
@@ -790,7 +792,8 @@ The following 7 open questions were resolved by the 3-engineer team (E1 ML, E2 U
 - [ ] Define wedge user persona and test with 5 real users
 - [ ] Learning-to-rank model (LambdaMART) using pairwise data (needs ~500 records)
 - [ ] Geographic training resource integration (ZIP to program mapping)
-- [ ] BLS labor market data integration (replace demand signal stubs)
+- [x] ~~BLS labor market data integration~~ (done, `app/data/bls_projections.py`)
+- [x] ~~Career Transition Report Generator~~ (in-browser, Claude API-powered) — deployed at `docs/github-pages/report.html`
 - [ ] Load testing (target: 100 concurrent users)
 - [ ] Transition graph visualization (D3, needs sufficient user volume)
 - [ ] Multi-language support (Spanish first)
@@ -824,6 +827,7 @@ This site incorporates information from O*NET Web Services by the U.S. Departmen
 | [ADR-006](docs/adr/ADR-006-bias-audit-approach.md) | Why demographic parity testing |
 | [Modeling Notes](MODELING_NOTES.md) | Detailed scoring formulas |
 | [Docker Testing](DOCKER_TESTING.md) | Docker test environment guide |
+| [Career Report](docs/github-pages/report.html) | In-browser career transition report (Claude API) |
 
 ## Support
 
