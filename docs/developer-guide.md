@@ -298,6 +298,83 @@ These metrics are stored in `model_registry.metrics_json` and available via `GET
 
 ---
 
+## Data Enrichment Pipeline
+
+The enrichment pipeline automatically discovers new occupations, fetches their skills from O\*NET, scores all QA personas against them, and persists everything to a JSON registry file (`app/data/occupation_registry.json`).
+
+### How It Works
+
+1. **Startup hook**: The pipeline runs on app startup (`app/main.py` lifespan). In demo mode it skips O\*NET discovery but still seeds static data and scores.
+2. **CLI**: `python -m app.services.enrichment_pipeline [--skip-discovery]`
+3. **API**: `POST /api/v1/enrichment/run`
+
+### Registry File
+
+The registry is a JSON file that accumulates data across runs:
+
+```json
+{
+  "version": 2,
+  "occupations": {
+    "15-1251.00": {
+      "title": "Computer Programmers",
+      "skills": [...],
+      "ai_exposure": { "theoretical_exposure": 0.94, "observed_exposure": 0.75 },
+      "bls_projections": { "projected_growth_pct": -10.6, "outlook": "declining" },
+      "scoring_results": { "derek_programmer": { "match_score": 85.2, "bucket": "ready_now" } }
+    }
+  },
+  "run_log": [...]
+}
+```
+
+### Using the Registry in Code
+
+```python
+from app.services.occupation_registry import OccupationRegistry
+
+registry = OccupationRegistry()
+
+# Read data
+entry = registry.get("15-1251.00")
+skills = registry.get_skills("15-1251.00")
+exposure = registry.get_exposure("15-1251.00")
+
+# Write data
+registry.upsert_occupation("99-0001.00", "New Occupation", source="manual")
+registry.set_skills("99-0001.00", [...])
+registry.save()
+
+# Summary
+print(registry.summary())
+```
+
+### Data Fallback Chain
+
+`get_exposure()` and `get_projections()` check the registry first, then fall back to the static Python dictionaries. This means dynamically discovered data is immediately available without code changes.
+
+### Adding New QA Personas
+
+Add personas to `tests/test_anthropic_report_personas.py` following the existing pattern:
+
+```python
+PERSONA_NEW = {
+    "name": "Name - Role, X% AI exposure",
+    "current_occupation": "XX-XXXX.00",
+    "skill_ratings": {
+        "2.B.8.a": 3,  # Critical Thinking - Advanced
+        # ... more skills
+    },
+    "expected_transition_context": "description of transition scenario",
+    "budget": 1000,
+    "timeline_months": 12,
+}
+```
+
+Then add the persona to `ALL_PERSONAS` and write scenario tests in the appropriate test class.
+
+---
+
 ## Deployment
 
 ### Environment Configuration
@@ -350,7 +427,10 @@ skillsprout/
 |   +-- db/session.py             # SQLAlchemy engine and session
 |   +-- models/models.py          # ORM models (Occupation, User, Feedback, etc.)
 |   +-- schemas/schemas.py        # Pydantic request/response schemas
-|   +-- services/onet_client.py   # O*NET API client + mock client
+|   +-- services/onet_client.py           # O*NET API client + mock client (14+ occupations)
+|   +-- services/occupation_registry.py  # JSON-backed persistent occupation store
+|   +-- services/enrichment_pipeline.py  # Auto-discovery, scoring, and persistence
+|   +-- services/enrichment_api.py       # REST endpoints for enrichment
 |   +-- ml/scoring.py             # BaselineScorer (Model v1)
 |   +-- ml/calibration.py         # CalibrationModel (Model v2)
 |   +-- tasks/celery_app.py       # Celery configuration
@@ -367,6 +447,8 @@ skillsprout/
 |   +-- unit/                     # Unit tests
 |   +-- integration/              # Integration tests
 |   +-- conftest.py               # Shared test fixtures
+|   +-- test_anthropic_report_personas.py  # 10 Anthropic report QA personas (68 tests)
+|   +-- test_enrichment_pipeline.py        # Registry + pipeline tests (31 tests)
 +-- scripts/                      # Utility scripts (seed, smoke test)
 +-- templates/                    # Jinja2 HTML templates
 +-- static/                       # CSS, JS assets

@@ -81,6 +81,28 @@ SkillSprout provides training path suggestions based on the job's education leve
 
 These are general suggestions. The actual training path depends on your specific situation, your learning style, and the resources available to you.
 
+### AI Exposure Index
+
+Each occupation includes an AI exposure indicator, drawn from the [Anthropic Labor Market Report](https://www.anthropic.com/research/labor-market-impacts) (March 2026). This shows how much of a job's tasks could be sped up or performed by AI:
+
+- **Theoretical exposure**: The share of tasks an AI could theoretically speed up by at least 2x.
+- **Observed exposure**: The share of tasks where AI is actually being used in professional settings today.
+
+For example, Computer Programmers have 94% theoretical exposure and 75% observed exposure -- meaning AI is already performing a large share of programming tasks in practice. In contrast, Electricians have near-zero AI exposure.
+
+This data helps you make informed transition decisions: moving toward roles with lower AI exposure may offer more long-term job security, while high-exposure roles may evolve significantly in the coming years.
+
+### Employment Outlook
+
+SkillSprout shows Bureau of Labor Statistics (BLS) 2024-2034 employment projections for each occupation:
+
+- **Strong growth** (>8% projected growth): High demand, expanding field
+- **Moderate growth** (3-8%): Stable, steady demand
+- **Stable** (-2% to 3%): Flat, neither growing nor shrinking
+- **Declining** (<-2%): Shrinking field, fewer openings expected
+
+Use the employment outlook alongside AI exposure to evaluate transition targets. A role with low AI exposure and strong growth (e.g., Electrician at +11.4%) may be a safer long-term bet than one with high exposure and declining outlook (e.g., Data Entry at -32%).
+
 ---
 
 ## Providing Feedback
@@ -179,6 +201,12 @@ Also, your current occupation is excluded from results (you already have that jo
 ### How accurate are the training time estimates?
 
 The training time estimates (e.g., "3-12 months for a certificate program") are rough guidelines based on the job zone. They do not account for your specific learning pace, prior related experience, or the intensity of the training program. Use them as a starting point for planning, not as a guarantee.
+
+### What does "AI exposure" mean for my job?
+
+AI exposure measures how much of a job's day-to-day tasks could be sped up or performed by artificial intelligence. A high exposure percentage does not mean you will lose your job -- it means AI tools are increasingly capable of assisting with or automating parts of the work. Jobs with high observed exposure (like programming at 75%) are already seeing significant AI adoption, while jobs with 0% observed exposure (like electricians) involve physical, hands-on work that AI cannot currently perform.
+
+Use this information to plan ahead: if your current role has high AI exposure, developing skills for lower-exposure roles can provide career insurance.
 
 ### Is SkillSprout a job board?
 
