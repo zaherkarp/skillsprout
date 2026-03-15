@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkillSprout Career Transition Report</title>
+  <title>SkillSprout - Career Transition Report Generator</title>
+
+  <!-- Open Graph / LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SkillSprout - Career Transition Report Generator" />
+  <meta property="og:description" content="Generate personalized career transition reports with O*NET skill matching, BLS employment projections, and Claude AI narrative analysis." />
+  <meta property="og:image" content="https://zaherkarp.github.io/skillsprout/og-image.png" />
+  <meta property="og:url" content="https://zaherkarp.github.io/skillsprout/report.html" />
+
+  <meta name="description" content="Generate personalized career transition reports using O*NET skill matching, BLS employment projections, and Claude AI narrative analysis." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" />
+
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -132,6 +143,100 @@
                 "Google Data Analytics Professional Certificate",
                 "Georgia Tech OMSA (Online MS Analytics)",
                 "DataCamp or Codecademy for foundational Python/R"
+              ]
+            }
+          }
+        ]
+      },
+      aisha_bootcamp: {
+        name: "Aisha",
+        currentOccupation: { code: "15-1252.00", title: "Software Developers", jobZone: 4 },
+        skills: [
+          { id: "2.B.1.a", name: "Reading Comprehension", rating: 3, importance: 3.75 },
+          { id: "2.B.1.c", name: "Writing", rating: 3, importance: 3.25 },
+          { id: "2.B.3.a", name: "Critical Thinking", rating: 3, importance: 4.00 },
+          { id: "2.B.3.b", name: "Active Learning", rating: 4, importance: 3.88 },
+          { id: "2.B.3.c", name: "Learning Strategies", rating: 3, importance: 3.12 },
+          { id: "2.B.4.b", name: "Programming", rating: 3, importance: 4.25 },
+          { id: "2.B.4.g", name: "Decision Making", rating: 2, importance: 3.50 },
+          { id: "2.B.7.a", name: "Time Management", rating: 3, importance: 3.62 },
+          { id: "2.B.3.d", name: "Monitoring", rating: 2, importance: 3.25 },
+          { id: "2.B.4.e", name: "Complex Problem Solving", rating: 3, importance: 4.12 },
+        ],
+        recommendations: [
+          {
+            code: "15-1299.08",
+            title: "Computer Systems Engineers/Architects",
+            bucket: "TRAINABLE",
+            matchScore: 62,
+            gapSeverity: 35,
+            gapSkills: ["Systems Architecture", "Infrastructure Design", "Enterprise Patterns"],
+            bls: { growthPct: 25.7, annualOpenings: 18900, currentEmployment: 172300, outlook: "strong growth" },
+            training: {
+              path: "AWS Solutions Architect certification + distributed systems coursework",
+              duration: "6-12 months",
+              estimatedCost: "$3,000-$8,000",
+              resources: [
+                "AWS Solutions Architect Associate certification",
+                "MIT OpenCourseWare: Distributed Systems",
+                "System Design Interview prep (Educative.io)"
+              ]
+            }
+          },
+          {
+            code: "15-2051.00",
+            title: "Data Scientists",
+            bucket: "TRAINABLE",
+            matchScore: 55,
+            gapSeverity: 40,
+            gapSkills: ["Statistical Modeling", "Machine Learning", "Data Visualization"],
+            bls: { growthPct: 35.2, annualOpenings: 20800, currentEmployment: 192300, outlook: "strong growth" },
+            training: {
+              path: "Data science specialization or MS in Data Science",
+              duration: "6-24 months",
+              estimatedCost: "$5,000-$40,000",
+              resources: [
+                "Google Advanced Data Analytics Certificate",
+                "Georgia Tech OMSA (Online MS Analytics)",
+                "Kaggle competitions for portfolio building"
+              ]
+            }
+          },
+          {
+            code: "15-1253.00",
+            title: "Software Quality Assurance Analysts",
+            bucket: "READY_NOW",
+            matchScore: 80,
+            gapSeverity: 18,
+            gapSkills: ["Test Automation Frameworks", "QA Methodologies"],
+            bls: { growthPct: 25.0, annualOpenings: 20400, currentEmployment: 199800, outlook: "strong growth" },
+            training: {
+              path: "ISTQB certification + test automation framework experience",
+              duration: "2-4 months",
+              estimatedCost: "$500-$2,000",
+              resources: [
+                "ISTQB Foundation Level certification",
+                "Selenium/Cypress automation courses (Udemy)",
+                "Ministry of Testing community resources"
+              ]
+            }
+          },
+          {
+            code: "11-3021.00",
+            title: "Computer and Information Systems Managers",
+            bucket: "LONG_RESKILL",
+            matchScore: 40,
+            gapSeverity: 55,
+            gapSkills: ["People Management", "Budgeting", "Strategic Planning", "Vendor Management"],
+            bls: { growthPct: 15.4, annualOpenings: 56300, currentEmployment: 561800, outlook: "strong growth" },
+            training: {
+              path: "MBA or technology management certificate + 3-5 years management experience",
+              duration: "3-5 years",
+              estimatedCost: "$20,000-$80,000",
+              resources: [
+                "MIT Sloan Executive Education: Technology Leadership",
+                "PMP certification for project management foundations",
+                "Manager Tools podcast and training (free start)"
               ]
             }
           }
@@ -276,7 +381,7 @@ Respond with ONLY the JSON object. No preamble, no markdown backticks, no explan
           "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6-20260320",
           max_tokens: 1000,
           messages: [{ role: "user", content: prompt }],
         }),
@@ -622,12 +727,25 @@ Respond with ONLY the JSON object. No preamble, no markdown backticks, no explan
           {/* PERSONA SELECTOR */}
           {!selectedPersona && (
             <div style={{
-              maxWidth: 640,
+              maxWidth: 720,
               margin: "0 auto",
-              padding: "80px 24px",
+              padding: "60px 24px",
               textAlign: "center",
               animation: "fadeSlideUp 0.5s ease both",
             }}>
+              <div style={{ marginBottom: 24 }}>
+                <a href="index.html" style={{
+                  fontSize: 13,
+                  color: "#888",
+                  textDecoration: "none",
+                  fontFamily: "'DM Sans', Helvetica, sans-serif",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}>
+                  &larr; Back to SkillSprout Home
+                </a>
+              </div>
               <h1 style={{
                 fontSize: 36,
                 fontFamily: "'Source Serif 4', Georgia, serif",

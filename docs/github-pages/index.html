@@ -3,55 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkillSprout Lite | GitHub Pages Demo</title>
+  <title>SkillSprout - AI-Powered Career Transition Engine</title>
+
+  <!-- Open Graph / LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SkillSprout - AI-Powered Career Transition Engine" />
+  <meta property="og:description" content="Discover your next career move with O*NET skill matching, BLS labor projections, and AI-generated transition reports. 910+ tests. Open source." />
+  <meta property="og:image" content="https://zaherkarp.github.io/skillsprout/og-image.png" />
+  <meta property="og:url" content="https://zaherkarp.github.io/skillsprout/" />
+  <meta property="og:site_name" content="SkillSprout" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SkillSprout - AI-Powered Career Transition Engine" />
+  <meta name="twitter:description" content="Discover your next career move with O*NET skill matching, BLS labor projections, and AI-generated transition reports." />
+
+  <meta name="description" content="SkillSprout is an open-source career transition recommendation engine using O*NET skill data, BLS employment projections, and Claude AI for personalized career pathway analysis." />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
-    <h1>SkillSprout Lite</h1>
-    <p>Static, no-backend career transition explorer ready for GitHub Pages.</p>
-    <a href="report.html" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#1a4e5c;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;">Generate Career Report</a>
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon" aria-hidden="true">🌱</span>
+        <h1>SkillSprout</h1>
+      </div>
+      <p class="tagline">AI-powered career transition engine built on O*NET skill data and BLS labor projections</p>
+      <div class="header-actions">
+        <a href="report.html" class="btn btn-primary">Generate Career Report</a>
+        <a href="https://github.com/zaherkarp/skillsprout" class="btn btn-outline" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-value">978</span><span class="stat-label">Tests Passing</span></div>
+        <div class="stat"><span class="stat-value">910+</span><span class="stat-label">O*NET Occupations</span></div>
+        <div class="stat"><span class="stat-value">35</span><span class="stat-label">O*NET Skills</span></div>
+        <div class="stat"><span class="stat-value">3</span><span class="stat-label">Bucket Tiers</span></div>
+      </div>
+    </div>
   </header>
 
   <main class="layout">
+    <section class="card feature-card">
+      <div class="feature-icon">📊</div>
+      <h2>How It Works</h2>
+      <div class="how-it-works">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>Select your current role</strong>
+            <p>Choose from O*NET occupations or enter a custom profile with self-rated skills (0-4 scale).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>Get scored recommendations</strong>
+            <p>The engine calculates match % and gap % for every target occupation, then assigns each to Ready Now, Trainable, or Long Reskill.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>Review your transition report</strong>
+            <p>See BLS employment projections, training paths with costs and timelines, and AI-generated narrative analysis.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="card persona-card">
-      <h2>Scenario QA: Moving out of fashion employment</h2>
-      <p class="hint">Use the persona below to test transition outcomes across three fields: <strong>project coordination</strong>, <strong>operations</strong>, and <strong>data analysis</strong>.</p>
-      <label for="persona-select">Persona</label>
-      <select id="persona-select"></select>
+      <h2>Interactive Demo</h2>
+      <p class="hint">Try the scoring engine yourself. Select a persona and adjust skill levels to see how recommendations change in real time.</p>
+      <div class="form-group">
+        <label for="persona-select">Persona</label>
+        <select id="persona-select"></select>
+      </div>
       <p id="persona-description" class="persona-description"></p>
     </section>
 
     <section class="card">
-      <h2>1) Choose your current role</h2>
-      <label for="current-role">Current role</label>
-      <select id="current-role"></select>
-      <p class="hint">This demo ships with built-in sample role profiles so it works entirely on github.io.</p>
+      <h2>1. Choose your current role</h2>
+      <div class="form-group">
+        <label for="current-role">Current role</label>
+        <select id="current-role"></select>
+      </div>
+      <p class="hint">This demo ships with built-in sample profiles so it works entirely client-side - no API keys, no server, no database.</p>
     </section>
 
     <section class="card">
-      <h2>2) Rate your skills</h2>
-      <p class="hint">Use 0 (none) to 4 (expert). We prefill values from your selected role or persona baseline.</p>
+      <h2>2. Rate your skills</h2>
+      <p class="hint">Use 0 (none) to 4 (expert). Values are prefilled from the selected role or persona baseline.</p>
       <div id="skills-form" class="skills-grid" aria-live="polite"></div>
       <div class="actions">
-        <button id="run-btn">Run recommendations</button>
-        <button id="reset-btn" class="button-secondary">Reset to baseline</button>
+        <button id="run-btn" class="btn btn-primary">Run Recommendations</button>
+        <button id="reset-btn" class="btn btn-secondary">Reset to Baseline</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>3) Recommendation buckets</h2>
-      <p class="hint">Rules mirror backend documentation: Ready Now (match ≥ 75 and gap ≤ 25), Trainable (match ≥ 50 or gap 26–55), Long Reskill (otherwise).</p>
+      <h2>3. Recommendation Buckets</h2>
+      <p class="hint">Bucket thresholds: <strong>Ready Now</strong> (match &ge; 75%, gap &le; 25%), <strong>Trainable</strong> (match &ge; 50% or gap 26-55%), <strong>Long Reskill</strong> (everything else).</p>
       <div class="bucket-grid">
-        <article>
+        <article class="bucket bucket-ready-card">
           <h3>Ready Now</h3>
           <ul id="bucket-ready" class="result-list"></ul>
         </article>
-        <article>
+        <article class="bucket bucket-trainable-card">
           <h3>Trainable</h3>
           <ul id="bucket-trainable" class="result-list"></ul>
         </article>
-        <article>
+        <article class="bucket bucket-long-card">
           <h3>Long Reskill</h3>
           <ul id="bucket-long" class="result-list"></ul>
         </article>
@@ -59,25 +125,67 @@
     </section>
 
     <section class="card">
-      <h2>Persona QA matrix (three fields)</h2>
-      <p class="hint">This matrix highlights where a fashion-exit persona is strongest and where targeted upskilling is needed.</p>
-      <table class="qa-table" id="qa-table" aria-label="Transition QA matrix">
-        <thead>
-          <tr>
-            <th>Field</th>
-            <th>Sample role</th>
-            <th>Bucket</th>
-            <th>Match</th>
-            <th>Gap</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <h2>Persona QA Matrix</h2>
+      <p class="hint">How the selected persona maps across focus fields - identifying where they are strongest and where targeted upskilling is needed.</p>
+      <div class="table-wrap">
+        <table class="qa-table" id="qa-table" aria-label="Transition QA matrix">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Target Role</th>
+              <th>Bucket</th>
+              <th>Match</th>
+              <th>Gap</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card feature-card">
+      <div class="feature-icon">🏗️</div>
+      <h2>Architecture</h2>
+      <div class="arch-grid">
+        <div class="arch-item">
+          <strong>Backend</strong>
+          <p>FastAPI + SQLAlchemy + Celery + Redis</p>
+        </div>
+        <div class="arch-item">
+          <strong>Scoring Engine</strong>
+          <p>O*NET skill matching with configurable thresholds</p>
+        </div>
+        <div class="arch-item">
+          <strong>ML Layer</strong>
+          <p>Calibration model (logistic regression) for feedback learning</p>
+        </div>
+        <div class="arch-item">
+          <strong>AI Integration</strong>
+          <p>Claude API for narrative career report generation</p>
+        </div>
+        <div class="arch-item">
+          <strong>Data Sources</strong>
+          <p>O*NET Web Services, BLS Employment Projections, Anthropic Labor Market Report</p>
+        </div>
+        <div class="arch-item">
+          <strong>Testing</strong>
+          <p>978 tests: unit, integration, E2E, persona QA, cross-team invariants</p>
+        </div>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>Designed for static hosting (GitHub Pages). No API keys, no server, no database.</p>
+    <div class="footer-content">
+      <p>Built with FastAPI, O*NET, BLS data, and Claude AI</p>
+      <p class="footer-links">
+        <a href="https://github.com/zaherkarp/skillsprout" target="_blank" rel="noopener">GitHub</a>
+        <span class="footer-sep">·</span>
+        <a href="report.html">Career Report Generator</a>
+        <span class="footer-sep">·</span>
+        <span>MIT License</span>
+      </p>
+    </div>
   </footer>
 
   <script src="app.js" defer></script>
