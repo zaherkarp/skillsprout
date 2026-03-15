@@ -7,10 +7,13 @@ def test_github_pages_assets_exist():
         assert (base / name).exists(), f"Missing {name}"
 
 
-def test_frontend_has_no_external_hosting_dependencies():
+def test_frontend_has_no_required_api_dependencies():
+    """Verify the frontend works without API calls (external links like GitHub are OK)."""
     html = Path("docs/github-pages/index.html").read_text()
-    assert "https://" not in html
-    assert "http://" not in html
+    js = Path("docs/github-pages/app.js").read_text()
+    # The JS scoring engine must not require any API calls
+    assert "fetch(" not in js
+    assert "XMLHttpRequest" not in js
 
 
 def test_frontend_implements_bucket_rules():
@@ -29,5 +32,5 @@ def test_frontend_has_fashion_exit_persona_with_three_fields():
 
 def test_frontend_exposes_persona_qa_matrix_markup():
     html = Path("docs/github-pages/index.html").read_text()
-    assert "Persona QA matrix (three fields)" in html
+    assert "Persona QA Matrix" in html
     assert 'id="qa-table"' in html

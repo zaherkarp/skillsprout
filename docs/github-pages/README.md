@@ -1,24 +1,32 @@
-# SkillSprout Lite (GitHub Pages Frontend)
+# SkillSprout - GitHub Pages Frontend
 
-This folder contains a fully static frontend that can be published directly to **GitHub Pages** without running FastAPI, PostgreSQL, or Redis.
+A fully static frontend for [SkillSprout](../../README.md) that runs on GitHub Pages without any backend infrastructure.
 
-## Why this exists
+## What's Included
 
-- Enables zero-infrastructure demos.
-- Gives a visual walkthrough of SkillSprout bucket logic.
-- Supports persona QA for people transitioning from fashion into new fields.
+| Page | Purpose |
+|------|---------|
+| `index.html` | Landing page with interactive skill-matching demo |
+| `report.html` | Career transition report generator (Claude AI-powered narratives) |
+| `app.js` | Scoring engine + embedded mock dataset |
+| `styles.css` | Responsive design system |
 
-## Design summary
+## Features
 
-- **Static-only architecture:** plain HTML + CSS + vanilla JavaScript (no external CDN dependencies).
-- **Built-in mock dataset:** sample roles, skill baselines, and transition targets are embedded in `app.js`.
-- **Persona QA flow:** `Nia (fashion -> new field)` tests three fields (`Project Coordination`, `Operations`, `Data Analysis`) in one run.
-- **Deterministic recommendation rules:**
-  - Ready Now: `match >= 75` and `gap <= 25`
-  - Trainable: `match >= 50` OR `gap in [26, 55]`
-  - Long Reskill: all others
+- **Interactive skill matcher** - adjust skill sliders and see recommendation buckets update in real time
+- **Career report generator** - generates structured reports with O*NET skill profiles, BLS labor market projections, and training paths
+- **Claude AI narratives** - optional AI-generated executive summaries and next-steps (requires Anthropic API key)
+- **Three demo personas** - Maria (nurse), Aisha (bootcamp developer), James (retail supervisor)
+- **Fully client-side** - no API keys, no server, no database required for the core demo
+- **Print-ready reports** - reports render cleanly for PDF export via browser print
 
-## Local test run
+## Scoring Rules
+
+- **Ready Now**: match >= 75% and gap <= 25%
+- **Trainable**: match >= 50% or gap in [26%, 55%]
+- **Long Reskill**: everything else
+
+## Local Development
 
 ```bash
 cd docs/github-pages
@@ -26,19 +34,13 @@ python -m http.server 4173
 # open http://localhost:4173
 ```
 
-## Publish to GitHub Pages
+## Deploy to GitHub Pages
 
-1. Push this repository to GitHub.
-2. In repository settings, enable **Pages**.
-3. Set source to your branch and `/docs/github-pages` folder.
-4. Save and wait for deployment.
+1. Push the repository to GitHub
+2. Go to Settings > Pages
+3. Set source to your branch and `/docs/github-pages` folder
+4. Save - the site deploys to `https://<user>.github.io/skillsprout/`
 
-The site will then be hosted on `https://<org-or-user>.github.io/<repo>/`.
+## LinkedIn Sharing
 
-## Career Transition Report Generator
-
-`report.html` is an in-browser career transition report generator powered by the Claude API.
-
-- **Structured data** (skills profile, BLS labor market table, recommendation cards) renders immediately without any API call.
-- **Narrative sections** (executive summary, labor market context, next steps) require a network connection and an Anthropic API key to call the Claude API at runtime.
-- If the Claude API is unavailable or no API key is provided, the report still renders all structured data sections with a warning banner.
+The pages include Open Graph meta tags for rich previews when shared on LinkedIn and other platforms. The OG image (`og-image.svg`) shows project stats and branding.
