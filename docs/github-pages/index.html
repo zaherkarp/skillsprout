@@ -3,139 +3,176 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkillSprout - AI-Powered Career Transition Engine</title>
+  <title>SkillSprout - Find Your Next Career Move</title>
 
   <!-- Open Graph / LinkedIn -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="SkillSprout - AI-Powered Career Transition Engine" />
-  <meta property="og:description" content="Discover your next career move with O*NET skill matching, BLS labor projections, and AI-generated transition reports. 910+ tests. Open source." />
+  <meta property="og:title" content="SkillSprout - Find Your Next Career Move" />
+  <meta property="og:description" content="Rate your skills, see which careers you're ready for today, which are within reach with training, and which would need a bigger investment. Free, open-source, runs in your browser." />
   <meta property="og:image" content="https://zaherkarp.github.io/skillsprout/og-image.png" />
   <meta property="og:url" content="https://zaherkarp.github.io/skillsprout/" />
   <meta property="og:site_name" content="SkillSprout" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="SkillSprout - AI-Powered Career Transition Engine" />
-  <meta name="twitter:description" content="Discover your next career move with O*NET skill matching, BLS labor projections, and AI-generated transition reports." />
+  <meta name="twitter:title" content="SkillSprout - Find Your Next Career Move" />
+  <meta name="twitter:description" content="Rate your skills, see which careers you're ready for today and which are within reach with training." />
 
-  <meta name="description" content="SkillSprout is an open-source career transition recommendation engine using O*NET skill data, BLS employment projections, and Claude AI for personalized career pathway analysis." />
+  <meta name="description" content="SkillSprout helps you explore career transitions by matching your skills against real occupation data. See what you're ready for now, what's trainable, and where you'd need to reskill." />
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- ============ HERO ============ -->
   <header class="site-header">
     <div class="header-content">
       <div class="logo">
         <span class="logo-icon" aria-hidden="true">🌱</span>
-        <h1>SkillSprout</h1>
+        <span class="logo-text">SkillSprout</span>
       </div>
-      <p class="tagline">AI-powered career transition engine built on O*NET skill data and BLS labor projections</p>
-      <div class="header-actions">
-        <a href="report.html" class="btn btn-primary">Generate Career Report</a>
-        <a href="https://github.com/zaherkarp/skillsprout" class="btn btn-outline" target="_blank" rel="noopener">View on GitHub</a>
-      </div>
-      <div class="stats-row">
-        <div class="stat"><span class="stat-value">978</span><span class="stat-label">Tests Passing</span></div>
-        <div class="stat"><span class="stat-value">910+</span><span class="stat-label">O*NET Occupations</span></div>
-        <div class="stat"><span class="stat-value">35</span><span class="stat-label">O*NET Skills</span></div>
-        <div class="stat"><span class="stat-value">3</span><span class="stat-label">Bucket Tiers</span></div>
-      </div>
+      <h1 class="hero-headline">Thinking about a career change?</h1>
+      <p class="tagline">Rate your skills below and instantly see which careers you could transition into &mdash; sorted by how ready you are today.</p>
+      <a href="#try-it" class="btn btn-hero">Try the Demo</a>
     </div>
   </header>
 
-  <main class="layout">
-    <section class="card feature-card">
-      <div class="feature-icon">📊</div>
-      <h2>How It Works</h2>
-      <div class="how-it-works">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div>
-            <strong>Select your current role</strong>
-            <p>Choose from O*NET occupations or enter a custom profile with self-rated skills (0-4 scale).</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div>
-            <strong>Get scored recommendations</strong>
-            <p>The engine calculates match % and gap % for every target occupation, then assigns each to Ready Now, Trainable, or Long Reskill.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div>
-            <strong>Review your transition report</strong>
-            <p>See BLS employment projections, training paths with costs and timelines, and AI-generated narrative analysis.</p>
-          </div>
+  <!-- ============ HOW IT WORKS (concise) ============ -->
+  <section class="how-strip">
+    <div class="how-strip-inner">
+      <div class="how-step">
+        <div class="how-icon">1</div>
+        <div>
+          <strong>Pick a starting point</strong>
+          <p>Choose a persona or role that's close to yours</p>
         </div>
       </div>
-    </section>
+      <div class="how-divider" aria-hidden="true"></div>
+      <div class="how-step">
+        <div class="how-icon">2</div>
+        <div>
+          <strong>Adjust your skill levels</strong>
+          <p>Slide each skill from 0 (none) to 4 (expert)</p>
+        </div>
+      </div>
+      <div class="how-divider" aria-hidden="true"></div>
+      <div class="how-step">
+        <div class="how-icon">3</div>
+        <div>
+          <strong>See your matches</strong>
+          <p>Careers sorted into Ready Now, Trainable, or Long Reskill</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
+  <main class="layout" id="try-it">
+
+    <!-- ============ PERSONA PICKER ============ -->
     <section class="card persona-card">
-      <h2>Interactive Demo</h2>
-      <p class="hint">Try the scoring engine yourself. Select a persona and adjust skill levels to see how recommendations change in real time.</p>
-      <div class="form-group">
-        <label for="persona-select">Persona</label>
-        <select id="persona-select"></select>
+      <div class="card-header">
+        <h2>Start with a persona</h2>
+        <span class="card-badge">Step 1</span>
+      </div>
+      <p class="guidance">Each persona is a realistic career profile. Pick one that's close to your situation, or just explore to see how the engine works.</p>
+      <div class="persona-picker" id="persona-picker">
+        <!-- JS fills this -->
       </div>
       <p id="persona-description" class="persona-description"></p>
     </section>
 
+    <!-- ============ CURRENT ROLE ============ -->
     <section class="card">
-      <h2>1. Choose your current role</h2>
+      <div class="card-header">
+        <h2>Your current role</h2>
+        <span class="card-badge">Step 1b</span>
+      </div>
+      <p class="guidance">This sets the starting skill profile. Changing the persona above updates this automatically.</p>
       <div class="form-group">
-        <label for="current-role">Current role</label>
+        <label for="current-role">Role</label>
         <select id="current-role"></select>
       </div>
-      <p class="hint">This demo ships with built-in sample profiles so it works entirely client-side - no API keys, no server, no database.</p>
     </section>
 
-    <section class="card">
-      <h2>2. Rate your skills</h2>
-      <p class="hint">Use 0 (none) to 4 (expert). Values are prefilled from the selected role or persona baseline.</p>
+    <!-- ============ SKILL SLIDERS ============ -->
+    <section class="card skills-card">
+      <div class="card-header">
+        <h2>Rate your skills</h2>
+        <span class="card-badge">Step 2</span>
+      </div>
+      <p class="guidance">Drag each slider to match your honest self-assessment. Results update automatically as you adjust.</p>
+      <div class="skill-legend">
+        <span class="legend-item"><span class="legend-dot legend-dot-0"></span> 0 = None</span>
+        <span class="legend-item"><span class="legend-dot legend-dot-1"></span> 1 = Basic</span>
+        <span class="legend-item"><span class="legend-dot legend-dot-2"></span> 2 = Intermediate</span>
+        <span class="legend-item"><span class="legend-dot legend-dot-3"></span> 3 = Advanced</span>
+        <span class="legend-item"><span class="legend-dot legend-dot-4"></span> 4 = Expert</span>
+      </div>
       <div id="skills-form" class="skills-grid" aria-live="polite"></div>
       <div class="actions">
-        <button id="run-btn" class="btn btn-primary">Run Recommendations</button>
-        <button id="reset-btn" class="btn btn-secondary">Reset to Baseline</button>
+        <button id="reset-btn" class="btn btn-secondary">Reset to Persona Baseline</button>
       </div>
     </section>
 
-    <section class="card">
-      <h2>3. Recommendation Buckets</h2>
-      <p class="hint">Bucket thresholds: <strong>Ready Now</strong> (match &ge; 75%, gap &le; 25%), <strong>Trainable</strong> (match &ge; 50% or gap 26-55%), <strong>Long Reskill</strong> (everything else).</p>
+    <!-- ============ RESULTS ============ -->
+    <section class="card results-card" id="results-section">
+      <div class="card-header">
+        <h2>Your career matches</h2>
+        <span class="card-badge">Results</span>
+      </div>
+      <p class="guidance">Based on your skill profile, here's how target careers break down. <strong>Ready Now</strong> means your skills already align closely. <strong>Trainable</strong> means you could get there with focused learning. <strong>Long Reskill</strong> means it would take significant time and investment.</p>
+
       <div class="bucket-grid">
         <article class="bucket bucket-ready-card">
-          <h3>Ready Now</h3>
+          <div class="bucket-header">
+            <span class="bucket-icon" aria-hidden="true">&#10003;</span>
+            <h3>Ready Now</h3>
+          </div>
+          <p class="bucket-desc">You could apply for these today. Your skills are a strong match.</p>
           <ul id="bucket-ready" class="result-list"></ul>
+          <p class="empty-state" id="empty-ready">No careers in this tier yet. Try increasing your skill levels above.</p>
         </article>
         <article class="bucket bucket-trainable-card">
-          <h3>Trainable</h3>
+          <div class="bucket-header">
+            <span class="bucket-icon" aria-hidden="true">&#9998;</span>
+            <h3>Trainable</h3>
+          </div>
+          <p class="bucket-desc">Within reach with targeted training &mdash; typically a few months of focused learning.</p>
           <ul id="bucket-trainable" class="result-list"></ul>
+          <p class="empty-state" id="empty-trainable">No careers in this tier with current skill levels.</p>
         </article>
         <article class="bucket bucket-long-card">
-          <h3>Long Reskill</h3>
+          <div class="bucket-header">
+            <span class="bucket-icon" aria-hidden="true">&#9201;</span>
+            <h3>Long Reskill</h3>
+          </div>
+          <p class="bucket-desc">Would require significant reskilling &mdash; think bootcamps, degrees, or years of practice.</p>
           <ul id="bucket-long" class="result-list"></ul>
+          <p class="empty-state" id="empty-long">No careers in this tier. Your skills are well-distributed!</p>
         </article>
       </div>
     </section>
 
+    <!-- ============ TRANSITION MATRIX ============ -->
     <section class="card">
-      <h2>Persona QA Matrix</h2>
-      <p class="hint">How the selected persona maps across focus fields - identifying where they are strongest and where targeted upskilling is needed.</p>
+      <div class="card-header">
+        <h2>Transition Summary</h2>
+        <span class="card-badge">Detail View</span>
+      </div>
+      <p class="guidance">A side-by-side comparison of how the selected persona maps to their focus career fields. This is the data that powers the recommendation buckets above.</p>
       <div class="table-wrap">
         <table class="qa-table" id="qa-table" aria-label="Transition QA matrix">
           <thead>
             <tr>
-              <th>Field</th>
+              <th>Career Field</th>
               <th>Target Role</th>
-              <th>Bucket</th>
-              <th>Match</th>
-              <th>Gap</th>
+              <th>Readiness</th>
+              <th>Match %</th>
+              <th>Gap %</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -143,46 +180,78 @@
       </div>
     </section>
 
-    <section class="card feature-card">
-      <div class="feature-icon">🏗️</div>
-      <h2>Architecture</h2>
-      <div class="arch-grid">
-        <div class="arch-item">
-          <strong>Backend</strong>
-          <p>FastAPI + SQLAlchemy + Celery + Redis</p>
+    <!-- ============ DEEPER REPORT CTA ============ -->
+    <section class="card cta-card">
+      <div class="cta-content">
+        <div>
+          <h2>Want a full career transition report?</h2>
+          <p>Get a detailed report with BLS employment projections, training paths with costs and timelines, and AI-generated narrative analysis powered by Claude.</p>
         </div>
-        <div class="arch-item">
-          <strong>Scoring Engine</strong>
-          <p>O*NET skill matching with configurable thresholds</p>
-        </div>
-        <div class="arch-item">
-          <strong>ML Layer</strong>
-          <p>Calibration model (logistic regression) for feedback learning</p>
-        </div>
-        <div class="arch-item">
-          <strong>AI Integration</strong>
-          <p>Claude API for narrative career report generation</p>
-        </div>
-        <div class="arch-item">
-          <strong>Data Sources</strong>
-          <p>O*NET Web Services, BLS Employment Projections, Anthropic Labor Market Report</p>
-        </div>
-        <div class="arch-item">
-          <strong>Testing</strong>
-          <p>978 tests: unit, integration, E2E, persona QA, cross-team invariants</p>
-        </div>
+        <a href="report.html" class="btn btn-cta">Generate Career Report</a>
       </div>
     </section>
+
+    <!-- ============ UNDER THE HOOD (collapsed by default) ============ -->
+    <details class="card tech-card">
+      <summary class="tech-toggle">
+        <h2>Under the Hood</h2>
+        <span class="toggle-hint">How SkillSprout works technically</span>
+      </summary>
+      <div class="tech-body">
+        <div class="tech-section">
+          <h3>Scoring Algorithm</h3>
+          <p>For each target career, SkillSprout calculates two numbers:</p>
+          <ul>
+            <li><strong>Match %</strong> &mdash; how much of the required skill profile you already satisfy (weighted by skill importance)</li>
+            <li><strong>Gap %</strong> &mdash; how much you're missing, as a proportion of total requirements</li>
+          </ul>
+          <p>These two numbers determine your bucket: <strong>Ready Now</strong> (match &ge; 75% and gap &le; 25%), <strong>Trainable</strong> (match &ge; 50% or gap 26-55%), or <strong>Long Reskill</strong> (everything else).</p>
+        </div>
+        <div class="tech-section">
+          <h3>Data Sources</h3>
+          <ul>
+            <li><strong>O*NET</strong> &mdash; the U.S. Department of Labor's database of 910+ occupations and 35 measurable skills</li>
+            <li><strong>BLS Employment Projections</strong> &mdash; Bureau of Labor Statistics 10-year job growth forecasts</li>
+            <li><strong>Anthropic Labor Market Report</strong> &mdash; AI exposure scores for occupations</li>
+          </ul>
+        </div>
+        <div class="tech-section">
+          <h3>Architecture</h3>
+          <div class="arch-grid">
+            <div class="arch-item">
+              <strong>Backend</strong>
+              <p>FastAPI + SQLAlchemy + Celery + Redis</p>
+            </div>
+            <div class="arch-item">
+              <strong>ML Layer</strong>
+              <p>Calibration model (logistic regression) for learning from feedback</p>
+            </div>
+            <div class="arch-item">
+              <strong>AI Integration</strong>
+              <p>Claude API for narrative career report generation</p>
+            </div>
+            <div class="arch-item">
+              <strong>Quality</strong>
+              <p>978 passing tests: unit, integration, E2E, persona QA</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
   </main>
 
   <footer class="site-footer">
     <div class="footer-content">
-      <p>Built with FastAPI, O*NET, BLS data, and Claude AI</p>
+      <div class="footer-brand">
+        <span aria-hidden="true">🌱</span> SkillSprout
+      </div>
+      <p>Open-source career transition engine. Built with Python, FastAPI, and real labor market data.</p>
       <p class="footer-links">
         <a href="https://github.com/zaherkarp/skillsprout" target="_blank" rel="noopener">GitHub</a>
-        <span class="footer-sep">·</span>
+        <span class="footer-sep" aria-hidden="true">&middot;</span>
         <a href="report.html">Career Report Generator</a>
-        <span class="footer-sep">·</span>
+        <span class="footer-sep" aria-hidden="true">&middot;</span>
         <span>MIT License</span>
       </p>
     </div>
