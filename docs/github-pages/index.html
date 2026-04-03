@@ -115,7 +115,37 @@
       <div id="skills-form" class="skills-grid" aria-live="polite"></div>
       <div class="actions">
         <button id="reset-btn" class="btn btn-secondary">Reset to Persona Baseline</button>
+        <button id="share-btn" class="btn btn-secondary btn-share">
+          <span class="share-icon" aria-hidden="true">&#128279;</span>
+          <span class="share-label">Share Profile</span>
+        </button>
       </div>
+    </section>
+
+    <!-- ============ RADAR CHART ============ -->
+    <section class="card radar-card">
+      <div class="card-header">
+        <h2>Skill Radar</h2>
+        <span class="card-badge">Visual</span>
+      </div>
+      <p class="guidance">See your skill profile at a glance. Click "Show on Radar Chart" on any career match below to compare your skills against its requirements.</p>
+      <div class="radar-wrap">
+        <svg id="radar-chart" viewBox="0 0 300 300" class="radar-svg"></svg>
+        <div class="radar-legend">
+          <span class="radar-legend-item radar-legend-user"><span class="radar-legend-dot"></span> Your Skills</span>
+          <span class="radar-legend-item" id="radar-legend-target" style="display:none"><span class="radar-legend-dot radar-legend-dot-target"></span> <span id="radar-target-name"></span> Requirements</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ QUICK WINS ADVISOR ============ -->
+    <section class="card quickwins-card">
+      <div class="card-header">
+        <h2>Quick Wins</h2>
+        <span class="card-badge">Advisor</span>
+      </div>
+      <p class="guidance">The single skill improvements that would have the biggest impact on your career options. Focus here first.</p>
+      <div id="quick-wins"></div>
     </section>
 
     <!-- ============ RESULTS ============ -->

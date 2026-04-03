@@ -1,5 +1,7 @@
 // =============================================================================
 // SkillSprout — Client-side career transition scoring engine
+// Enhanced with interactive features: radar chart, expandable cards,
+// skill gap markers, quick wins advisor, progress rings, URL persistence
 // =============================================================================
 
 const catalog = {
@@ -25,44 +27,24 @@ const catalog = {
 
   roles: {
     "Fashion Sales Associate": {
-      communication: 4,
-      customer_service: 4,
-      critical_thinking: 2,
-      programming: 0,
-      data_analysis: 1,
-      operations: 2,
+      communication: 4, customer_service: 4, critical_thinking: 2,
+      programming: 0, data_analysis: 1, operations: 2,
     },
     "Retail Supervisor": {
-      communication: 4,
-      customer_service: 4,
-      critical_thinking: 2,
-      programming: 0,
-      data_analysis: 1,
-      operations: 3,
+      communication: 4, customer_service: 4, critical_thinking: 2,
+      programming: 0, data_analysis: 1, operations: 3,
     },
     "Junior Developer": {
-      communication: 2,
-      customer_service: 1,
-      critical_thinking: 3,
-      programming: 4,
-      data_analysis: 3,
-      operations: 2,
+      communication: 2, customer_service: 1, critical_thinking: 3,
+      programming: 4, data_analysis: 3, operations: 2,
     },
     "Marketing Coordinator": {
-      communication: 4,
-      customer_service: 3,
-      critical_thinking: 3,
-      programming: 1,
-      data_analysis: 3,
-      operations: 2,
+      communication: 4, customer_service: 3, critical_thinking: 3,
+      programming: 1, data_analysis: 3, operations: 2,
     },
     "Administrative Assistant": {
-      communication: 3,
-      customer_service: 3,
-      critical_thinking: 2,
-      programming: 0,
-      data_analysis: 1,
-      operations: 4,
+      communication: 3, customer_service: 3, critical_thinking: 2,
+      programming: 0, data_analysis: 1, operations: 4,
     },
   },
 
@@ -76,12 +58,8 @@ const catalog = {
         "Nia spent 6 years in fashion retail and wants to move into a more stable career path. She's great with people, organized, and picks things up fast.",
       focusFields: ["Project Coordination", "Operations", "Data Analysis"],
       profile: {
-        communication: 4,
-        customer_service: 4,
-        critical_thinking: 3,
-        programming: 1,
-        data_analysis: 2,
-        operations: 3,
+        communication: 4, customer_service: 4, critical_thinking: 3,
+        programming: 1, data_analysis: 2, operations: 3,
       },
     },
     "Marcus (retail -> tech)": {
@@ -93,12 +71,8 @@ const catalog = {
         "Marcus has managed a retail team for 4 years and wants to break into the tech industry. He's a strong leader and communicator, but has limited technical skills.",
       focusFields: ["Project Coordination", "Data Analysis", "Engineering"],
       profile: {
-        communication: 4,
-        customer_service: 4,
-        critical_thinking: 3,
-        programming: 0,
-        data_analysis: 1,
-        operations: 3,
+        communication: 4, customer_service: 4, critical_thinking: 3,
+        programming: 0, data_analysis: 1, operations: 3,
       },
     },
     "Priya (admin -> analytics)": {
@@ -110,91 +84,51 @@ const catalog = {
         "Priya has been an administrative assistant for 3 years and has been teaching herself Excel and SQL on the side. She wants to move into a data-focused role.",
       focusFields: ["Data Analysis", "Operations", "Project Coordination"],
       profile: {
-        communication: 3,
-        customer_service: 3,
-        critical_thinking: 3,
-        programming: 1,
-        data_analysis: 3,
-        operations: 4,
+        communication: 3, customer_service: 3, critical_thinking: 3,
+        programming: 1, data_analysis: 3, operations: 4,
       },
     },
   },
 
   targets: [
     {
-      title: "Project Coordinator",
-      field: "Project Coordination",
-      requirements: {
-        communication: 4,
-        customer_service: 3,
-        critical_thinking: 3,
-        programming: 0,
-        data_analysis: 2,
-        operations: 3,
-      },
+      title: "Project Coordinator", field: "Project Coordination",
+      requirements: { communication: 4, customer_service: 3, critical_thinking: 3, programming: 0, data_analysis: 2, operations: 3 },
+      trainingTip: "Look into PMP or CAPM certifications. Many online programs take 2-3 months.",
     },
     {
-      title: "Operations Specialist",
-      field: "Operations",
-      requirements: {
-        communication: 3,
-        customer_service: 3,
-        critical_thinking: 3,
-        programming: 1,
-        data_analysis: 2,
-        operations: 4,
-      },
+      title: "Operations Specialist", field: "Operations",
+      requirements: { communication: 3, customer_service: 3, critical_thinking: 3, programming: 1, data_analysis: 2, operations: 4 },
+      trainingTip: "Six Sigma or Lean certifications are valued. Free courses available on Coursera.",
     },
     {
-      title: "Junior Data Analyst",
-      field: "Data Analysis",
-      requirements: {
-        communication: 2,
-        customer_service: 1,
-        critical_thinking: 4,
-        programming: 2,
-        data_analysis: 4,
-        operations: 2,
-      },
+      title: "Junior Data Analyst", field: "Data Analysis",
+      requirements: { communication: 2, customer_service: 1, critical_thinking: 4, programming: 2, data_analysis: 4, operations: 2 },
+      trainingTip: "Start with Google Data Analytics Certificate (~6 months). Learn SQL and Python basics.",
     },
     {
-      title: "Software Developer",
-      field: "Engineering",
-      requirements: {
-        communication: 2,
-        customer_service: 1,
-        critical_thinking: 3,
-        programming: 4,
-        data_analysis: 3,
-        operations: 1,
-      },
+      title: "Software Developer", field: "Engineering",
+      requirements: { communication: 2, customer_service: 1, critical_thinking: 3, programming: 4, data_analysis: 3, operations: 1 },
+      trainingTip: "Consider a coding bootcamp (12-16 weeks) or freeCodeCamp's curriculum.",
     },
     {
-      title: "Customer Success Manager",
-      field: "Customer Success",
-      requirements: {
-        communication: 4,
-        customer_service: 4,
-        critical_thinking: 3,
-        programming: 0,
-        data_analysis: 2,
-        operations: 3,
-      },
+      title: "Customer Success Manager", field: "Customer Success",
+      requirements: { communication: 4, customer_service: 4, critical_thinking: 3, programming: 0, data_analysis: 2, operations: 3 },
+      trainingTip: "Leverage your people skills. HubSpot Academy offers free CS certifications.",
     },
     {
-      title: "Business Analyst",
-      field: "Business Analysis",
-      requirements: {
-        communication: 3,
-        customer_service: 2,
-        critical_thinking: 4,
-        programming: 1,
-        data_analysis: 4,
-        operations: 3,
-      },
+      title: "Business Analyst", field: "Business Analysis",
+      requirements: { communication: 3, customer_service: 2, critical_thinking: 4, programming: 1, data_analysis: 4, operations: 3 },
+      trainingTip: "IIBA certifications (ECBA/CCBA) are industry standard. Strong Excel/SQL skills are key.",
     },
   ],
 };
+
+// =============================================================================
+// State
+// =============================================================================
+let selectedTarget = null; // currently focused target for radar chart comparison
+let lastResults = [];
 
 // =============================================================================
 // DOM refs
@@ -219,6 +153,7 @@ function scoreTarget(user, target) {
   let gapTotal = 0;
   let gapPossible = 0;
   const gapSkills = [];
+  const skillComparison = {};
 
   for (const skill of catalog.skills) {
     const required = target.requirements[skill];
@@ -226,9 +161,11 @@ function scoreTarget(user, target) {
     matchEarned += Math.min(actual, required);
     matchPossible += required;
 
+    skillComparison[skill] = { actual, required, gap: Math.max(0, required - actual) };
+
     if (actual < required) {
       gapTotal += required - actual;
-      gapSkills.push(catalog.skillLabels[skill]);
+      gapSkills.push({ name: catalog.skillLabels[skill], gap: required - actual, required, actual });
     }
     gapPossible += required;
   }
@@ -244,12 +181,10 @@ function scoreTarget(user, target) {
   }
 
   return {
-    bucket,
-    match: Math.round(match),
-    gap: Math.round(gap),
-    title: target.title,
-    field: target.field,
-    gapSkills,
+    bucket, match: Math.round(match), gap: Math.round(gap),
+    title: target.title, field: target.field, gapSkills,
+    skillComparison, trainingTip: target.trainingTip,
+    requirements: target.requirements,
   };
 }
 
@@ -257,6 +192,85 @@ function bucketLabel(bucket) {
   if (bucket === "ready") return "Ready Now";
   if (bucket === "trainable") return "Trainable";
   return "Long Reskill";
+}
+
+// =============================================================================
+// Radar Chart (SVG)
+// =============================================================================
+function renderRadarChart(userProfile, targetReqs) {
+  const canvas = document.getElementById("radar-chart");
+  if (!canvas) return;
+
+  const skills = catalog.skills;
+  const n = skills.length;
+  const cx = 150, cy = 150, maxR = 120;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  function polarToXY(i, value) {
+    const angle = startAngle + i * angleStep;
+    const r = (value / 4) * maxR;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+
+  function makePolygon(values, cls) {
+    const points = values.map((v, i) => {
+      const p = polarToXY(i, v);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+    return `<polygon points="${points}" class="${cls}" />`;
+  }
+
+  // Grid rings
+  let svg = "";
+  for (let ring = 1; ring <= 4; ring++) {
+    const pts = skills.map((_, i) => {
+      const p = polarToXY(i, ring);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+    svg += `<polygon points="${pts}" class="radar-grid" />`;
+  }
+
+  // Axis lines + labels
+  skills.forEach((skill, i) => {
+    const p = polarToXY(i, 4.6);
+    const pLine = polarToXY(i, 4);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${pLine.x}" y2="${pLine.y}" class="radar-axis" />`;
+    const anchor = p.x < cx - 5 ? "end" : p.x > cx + 5 ? "start" : "middle";
+    svg += `<text x="${p.x}" y="${p.y}" text-anchor="${anchor}" dominant-baseline="middle" class="radar-label">${catalog.skillLabels[skill]}</text>`;
+  });
+
+  // Target polygon (if selected)
+  if (targetReqs) {
+    const targetVals = skills.map(s => targetReqs[s] || 0);
+    svg += makePolygon(targetVals, "radar-target");
+  }
+
+  // User polygon
+  const userVals = skills.map(s => userProfile[s] || 0);
+  svg += makePolygon(userVals, "radar-user");
+
+  // User dots
+  userVals.forEach((v, i) => {
+    const p = polarToXY(i, v);
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="4" class="radar-dot" />`;
+  });
+
+  canvas.innerHTML = svg;
+}
+
+// =============================================================================
+// Progress ring SVG helper
+// =============================================================================
+function progressRingSVG(pct, size, colorVar) {
+  const r = (size - 6) / 2;
+  const c = Math.PI * 2 * r;
+  const offset = c - (pct / 100) * c;
+  return `<svg class="progress-ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" class="progress-ring-bg" />
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" class="progress-ring-fill" style="stroke-dasharray:${c};stroke-dashoffset:${offset};stroke:var(${colorVar})" />
+    <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central" class="progress-ring-text">${pct}%</text>
+  </svg>`;
 }
 
 // =============================================================================
@@ -272,7 +286,7 @@ function readSkills() {
 }
 
 // =============================================================================
-// Render skill sliders
+// Render skill sliders (with target gap markers)
 // =============================================================================
 function renderSkillInputs(profile) {
   skillsForm.innerHTML = "";
@@ -280,9 +294,13 @@ function renderSkillInputs(profile) {
     const block = document.createElement("div");
     block.className = "skill-item";
     const value = profile[skill] ?? 0;
+
     block.innerHTML = `
       <label>${catalog.skillLabels[skill]}</label>
-      <input data-skill="${skill}" type="range" min="0" max="4" step="1" value="${value}" aria-label="${catalog.skillLabels[skill]} skill level" />
+      <div class="slider-wrap">
+        <input data-skill="${skill}" type="range" min="0" max="4" step="1" value="${value}" aria-label="${catalog.skillLabels[skill]} skill level" />
+        <div class="target-marker" data-skill-target="${skill}" style="display:none"></div>
+      </div>
       <div class="skill-level">
         <span class="skill-level-label">${catalog.levelLabels[value]}</span>
         <output>${value}</output>/4
@@ -299,12 +317,34 @@ function renderSkillInputs(profile) {
       output.value = val;
       levelLabel.textContent = catalog.levelLabels[val];
       runRecommendations();
+      saveStateToURL();
     });
   }
 }
 
 // =============================================================================
-// Render recommendation results
+// Update target markers on sliders
+// =============================================================================
+function updateTargetMarkers(targetReqs) {
+  for (const skill of catalog.skills) {
+    const marker = document.querySelector(`[data-skill-target="${skill}"]`);
+    if (!marker) continue;
+    if (!targetReqs) {
+      marker.style.display = "none";
+      continue;
+    }
+    const req = targetReqs[skill] || 0;
+    marker.style.display = "block";
+    marker.style.left = `${(req / 4) * 100}%`;
+    marker.title = `Target needs: ${catalog.levelLabels[req]} (${req})`;
+
+    const currentVal = Number(document.querySelector(`[data-skill="${skill}"]`).value);
+    marker.className = "target-marker" + (currentVal >= req ? " target-met" : " target-gap");
+  }
+}
+
+// =============================================================================
+// Render recommendation results (with progress rings + expandable cards)
 // =============================================================================
 function renderResults(results) {
   const bucketEls = {
@@ -323,28 +363,81 @@ function renderResults(results) {
   }
 
   const counts = { ready: 0, trainable: 0, long: 0 };
-
-  // Sort by match score descending within each bucket
   const sorted = [...results].sort((a, b) => b.match - a.match);
 
   for (const result of sorted) {
     counts[result.bucket]++;
     const item = document.createElement("li");
+    item.className = "result-item";
+    const isSelected = selectedTarget === result.title;
+    if (isSelected) item.classList.add("result-selected");
 
-    const gapDetail =
-      result.gapSkills.length > 0
-        ? `<span class="result-gaps">Gaps: ${result.gapSkills.join(", ")}</span>`
-        : "";
+    const colorVar = result.bucket === "ready" ? "--ready" : result.bucket === "trainable" ? "--trainable" : "--long";
+
+    const gapDetails = result.gapSkills.length > 0
+      ? result.gapSkills.map(g =>
+          `<div class="gap-detail-row">
+            <span class="gap-skill-name">${g.name}</span>
+            <span class="gap-skill-bar-wrap">
+              <span class="gap-skill-bar-current" style="width:${(g.actual/4)*100}%"></span>
+              <span class="gap-skill-bar-needed" style="width:${(g.required/4)*100}%"></span>
+            </span>
+            <span class="gap-skill-vals">${g.actual} &rarr; ${g.required}</span>
+          </div>`
+        ).join("")
+      : '<div class="gap-none">No skill gaps - you meet all requirements!</div>';
+
+    const trainingHTML = result.trainingTip
+      ? `<div class="training-tip"><strong>Training tip:</strong> ${result.trainingTip}</div>`
+      : "";
 
     item.innerHTML = `
-      <div class="result-title">${result.title}</div>
-      <div class="result-meta">
-        <span>Match: <span class="match-pct">${result.match}%</span></span>
-        <span>Gap: <span class="gap-pct">${result.gap}%</span></span>
-        <span>${result.field}</span>
+      <div class="result-header" data-target="${result.title}">
+        <div class="result-ring">${progressRingSVG(result.match, 48, colorVar)}</div>
+        <div class="result-info">
+          <div class="result-title">${result.title}</div>
+          <div class="result-meta">
+            <span>${result.field}</span>
+            <span>Gap: <span class="gap-pct">${result.gap}%</span></span>
+          </div>
+        </div>
+        <span class="expand-icon">${isSelected ? "&#9650;" : "&#9660;"}</span>
       </div>
-      ${gapDetail}
+      <div class="result-details ${isSelected ? "open" : ""}">
+        <div class="gap-breakdown">
+          <h4>Skill Gap Breakdown</h4>
+          ${gapDetails}
+        </div>
+        ${trainingHTML}
+        <button class="btn-compare" data-compare="${result.title}">
+          ${isSelected ? "Hide on Radar" : "Show on Radar Chart"}
+        </button>
+      </div>
     `;
+
+    // Click to expand
+    item.querySelector(".result-header").addEventListener("click", () => {
+      const details = item.querySelector(".result-details");
+      const icon = item.querySelector(".expand-icon");
+      const isOpen = details.classList.contains("open");
+      details.classList.toggle("open");
+      icon.innerHTML = isOpen ? "&#9660;" : "&#9650;";
+    });
+
+    // Compare button
+    item.querySelector(".btn-compare").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (selectedTarget === result.title) {
+        selectedTarget = null;
+        updateTargetMarkers(null);
+      } else {
+        selectedTarget = result.title;
+        updateTargetMarkers(result.requirements);
+      }
+      runRecommendations();
+      renderRadarChart(readSkills(), selectedTarget ? result.requirements : null);
+    });
+
     bucketEls[result.bucket].appendChild(item);
   }
 
@@ -352,6 +445,78 @@ function renderResults(results) {
   for (const key of Object.keys(emptyEls)) {
     emptyEls[key].style.display = counts[key] > 0 ? "none" : "block";
   }
+
+  // Update radar legend
+  const radarLegend = document.getElementById("radar-legend-target");
+  if (radarLegend) {
+    radarLegend.style.display = selectedTarget ? "inline-flex" : "none";
+    const radarTargetName = document.getElementById("radar-target-name");
+    if (radarTargetName) radarTargetName.textContent = selectedTarget || "";
+  }
+}
+
+// =============================================================================
+// Quick Wins Advisor
+// =============================================================================
+function renderQuickWins(results, userProfile) {
+  const container = document.getElementById("quick-wins");
+  if (!container) return;
+
+  // For each skill, calculate how many careers would improve if we +1 that skill
+  const skillImpact = {};
+  for (const skill of catalog.skills) {
+    const boostedProfile = { ...userProfile, [skill]: Math.min(4, userProfile[skill] + 1) };
+    let careersImproved = 0;
+    let totalMatchGain = 0;
+
+    for (const target of catalog.targets) {
+      const current = scoreTarget(userProfile, target);
+      const boosted = scoreTarget(boostedProfile, target);
+
+      if (boosted.bucket !== current.bucket && (
+        (boosted.bucket === "ready" && current.bucket !== "ready") ||
+        (boosted.bucket === "trainable" && current.bucket === "long")
+      )) {
+        careersImproved++;
+      }
+      totalMatchGain += boosted.match - current.match;
+    }
+
+    if (userProfile[skill] < 4) {
+      skillImpact[skill] = { careersImproved, totalMatchGain, currentLevel: userProfile[skill] };
+    }
+  }
+
+  // Sort by impact
+  const ranked = Object.entries(skillImpact)
+    .sort((a, b) => {
+      if (b[1].careersImproved !== a[1].careersImproved) return b[1].careersImproved - a[1].careersImproved;
+      return b[1].totalMatchGain - a[1].totalMatchGain;
+    })
+    .slice(0, 3);
+
+  if (ranked.length === 0 || ranked[0][1].totalMatchGain === 0) {
+    container.innerHTML = '<div class="quick-win-empty">Your skills are maxed out across the board!</div>';
+    return;
+  }
+
+  container.innerHTML = ranked.map(([skill, impact], i) => {
+    const label = catalog.skillLabels[skill];
+    const levelNow = catalog.levelLabels[impact.currentLevel];
+    const levelNext = catalog.levelLabels[impact.currentLevel + 1];
+    const unlockText = impact.careersImproved > 0
+      ? `<span class="qw-unlock">Unlocks ${impact.careersImproved} career${impact.careersImproved > 1 ? "s" : ""} to a better tier</span>`
+      : "";
+
+    return `<div class="quick-win-item ${i === 0 ? "qw-top" : ""}">
+      <div class="qw-rank">#${i + 1}</div>
+      <div class="qw-body">
+        <div class="qw-skill">${label}: ${levelNow} &rarr; ${levelNext}</div>
+        <div class="qw-impact">+${impact.totalMatchGain}% total match improvement across all careers</div>
+        ${unlockText}
+      </div>
+    </div>`;
+  }).join("");
 }
 
 // =============================================================================
@@ -385,6 +550,56 @@ function renderPersonaQaMatrix(results) {
 }
 
 // =============================================================================
+// URL State Persistence
+// =============================================================================
+function saveStateToURL() {
+  const skills = readSkills();
+  const params = new URLSearchParams();
+  for (const [key, val] of Object.entries(skills)) {
+    params.set(key, val);
+  }
+  const persona = getActivePersonaKey();
+  if (persona) params.set("persona", persona);
+  history.replaceState(null, "", `#${params.toString()}`);
+
+  // Update share button
+  const shareBtn = document.getElementById("share-btn");
+  if (shareBtn) shareBtn.classList.remove("copied");
+}
+
+function loadStateFromURL() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return false;
+  const params = new URLSearchParams(hash);
+
+  // Check if we have skill data
+  const hasSkills = catalog.skills.some(s => params.has(s));
+  if (!hasSkills) return false;
+
+  // Apply persona if present
+  const persona = params.get("persona");
+  if (persona && catalog.personas[persona]) {
+    applyPersona(persona, true); // skipURL = true to avoid overwriting
+  }
+
+  // Override with URL skill values
+  for (const skill of catalog.skills) {
+    if (params.has(skill)) {
+      const slider = document.querySelector(`[data-skill="${skill}"]`);
+      if (slider) {
+        const val = Number(params.get(skill));
+        slider.value = val;
+        const item = slider.closest(".skill-item");
+        item.querySelector("output").value = val;
+        item.querySelector(".skill-level-label").textContent = catalog.levelLabels[val];
+      }
+    }
+  }
+
+  return true;
+}
+
+// =============================================================================
 // Run scoring + render
 // =============================================================================
 function runRecommendations() {
@@ -392,8 +607,14 @@ function runRecommendations() {
   const scored = catalog.targets.map((target) =>
     scoreTarget(userProfile, target)
   );
+  lastResults = scored;
   renderResults(scored);
   renderPersonaQaMatrix(scored);
+  renderQuickWins(scored, userProfile);
+  renderRadarChart(userProfile, selectedTarget
+    ? catalog.targets.find(t => t.title === selectedTarget)?.requirements
+    : null
+  );
 }
 
 // =============================================================================
@@ -404,18 +625,44 @@ function getActivePersonaKey() {
   return active ? active.dataset.persona : null;
 }
 
-function applyPersona(personaKey) {
+function applyPersona(personaKey, skipURL) {
   const persona = catalog.personas[personaKey];
 
-  // Update active button state
   personaPicker.querySelectorAll(".persona-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.persona === personaKey);
   });
 
   personaDescription.textContent = persona.description;
   currentRole.value = persona.role;
+  selectedTarget = null;
   renderSkillInputs(persona.profile);
   runRecommendations();
+  if (!skipURL) saveStateToURL();
+}
+
+// =============================================================================
+// Share button handler
+// =============================================================================
+function handleShare() {
+  saveStateToURL();
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById("share-btn");
+    btn.classList.add("copied");
+    btn.querySelector(".share-label").textContent = "Link Copied!";
+    setTimeout(() => {
+      btn.classList.remove("copied");
+      btn.querySelector(".share-label").textContent = "Share Profile";
+    }, 2000);
+  }).catch(() => {
+    // Fallback: select text in a temporary input
+    const tmp = document.createElement("input");
+    tmp.value = url;
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand("copy");
+    document.body.removeChild(tmp);
+  });
 }
 
 // =============================================================================
@@ -446,25 +693,35 @@ for (const [key, persona] of Object.entries(catalog.personas)) {
 
 // Event listeners
 currentRole.addEventListener("change", () => {
-  // Deselect persona buttons when manually changing role
-  personaPicker
-    .querySelectorAll(".persona-btn")
-    .forEach((btn) => btn.classList.remove("active"));
+  personaPicker.querySelectorAll(".persona-btn").forEach((btn) => btn.classList.remove("active"));
   personaDescription.textContent = "";
+  selectedTarget = null;
   renderSkillInputs(catalog.roles[currentRole.value]);
   runRecommendations();
+  saveStateToURL();
 });
 
 resetButton.addEventListener("click", () => {
   const personaKey = getActivePersonaKey();
+  selectedTarget = null;
   if (personaKey) {
     applyPersona(personaKey);
   } else {
     renderSkillInputs(catalog.roles[currentRole.value]);
     runRecommendations();
   }
+  saveStateToURL();
 });
 
-// Boot with first persona selected
+// Share button
+const shareBtn = document.getElementById("share-btn");
+if (shareBtn) shareBtn.addEventListener("click", handleShare);
+
+// Boot: try loading from URL, else use first persona
 const firstPersonaKey = Object.keys(catalog.personas)[0];
-applyPersona(firstPersonaKey);
+const loaded = loadStateFromURL();
+if (!loaded) {
+  applyPersona(firstPersonaKey);
+} else {
+  runRecommendations();
+}
