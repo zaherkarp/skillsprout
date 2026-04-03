@@ -129,6 +129,10 @@ const catalog = {
 // =============================================================================
 let selectedTarget = null; // currently focused target for radar chart comparison
 let lastResults = [];
+let savedCareers = JSON.parse(localStorage.getItem("skillsprout_shortlist") || "[]");
+let currentStep = 1;
+let hasAdjustedSliders = false;
+let prevReadyCount = 0;
 
 // =============================================================================
 // DOM refs
@@ -316,6 +320,8 @@ function renderSkillInputs(profile) {
       const val = Number(slider.value);
       output.value = val;
       levelLabel.textContent = catalog.levelLabels[val];
+      hasAdjustedSliders = true;
+      updateStepProgress(2);
       runRecommendations();
       saveStateToURL();
     });
@@ -401,6 +407,9 @@ function renderResults(results) {
             <span>Gap: <span class="gap-pct">${result.gap}%</span></span>
           </div>
         </div>
+        <button class="btn-bookmark ${savedCareers.includes(result.title) ? "bookmarked" : ""}" data-bookmark="${result.title}" title="${savedCareers.includes(result.title) ? "Remove from shortlist" : "Add to shortlist"}">
+          ${savedCareers.includes(result.title) ? "&#9733;" : "&#9734;"}
+        </button>
         <span class="expand-icon">${isSelected ? "&#9650;" : "&#9660;"}</span>
       </div>
       <div class="result-details ${isSelected ? "open" : ""}">
@@ -436,6 +445,12 @@ function renderResults(results) {
       }
       runRecommendations();
       renderRadarChart(readSkills(), selectedTarget ? result.requirements : null);
+    });
+
+    // Bookmark button
+    item.querySelector(".btn-bookmark").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleBookmark(result.title);
     });
 
     bucketEls[result.bucket].appendChild(item);
@@ -600,6 +615,95 @@ function loadStateFromURL() {
 }
 
 // =============================================================================
+// Step Progress Indicator
+// =============================================================================
+function updateStepProgress(step) {
+  currentStep = Math.max(currentStep, step);
+  const nodes = document.querySelectorAll(".step-node");
+  const connectors = document.querySelectorAll(".step-connector");
+  nodes.forEach((node, i) => {
+    const s = i + 1;
+    node.classList.toggle("active", s <= currentStep);
+    node.classList.toggle("completed", s < currentStep);
+  });
+  connectors.forEach((conn, i) => {
+    conn.classList.toggle("filled", i + 1 < currentStep);
+  });
+}
+
+// =============================================================================
+// Celebration Animation (confetti burst for Ready Now)
+// =============================================================================
+function celebrate() {
+  const container = document.getElementById("results-section");
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const colors = ["#15803d", "#0d9488", "#f59e0b", "#10b981", "#34d399"];
+  for (let i = 0; i < 24; i++) {
+    const particle = document.createElement("div");
+    particle.className = "confetti";
+    particle.style.left = `${rect.left + rect.width * Math.random()}px`;
+    particle.style.top = `${rect.top + window.scrollY - 10}px`;
+    particle.style.background = colors[i % colors.length];
+    particle.style.animationDelay = `${Math.random() * 0.3}s`;
+    particle.style.setProperty("--dx", `${(Math.random() - 0.5) * 200}px`);
+    document.body.appendChild(particle);
+    particle.addEventListener("animationend", () => particle.remove());
+  }
+}
+
+// =============================================================================
+// Bookmark / Shortlist
+// =============================================================================
+function toggleBookmark(title) {
+  const idx = savedCareers.indexOf(title);
+  if (idx >= 0) {
+    savedCareers.splice(idx, 1);
+  } else {
+    savedCareers.push(title);
+  }
+  localStorage.setItem("skillsprout_shortlist", JSON.stringify(savedCareers));
+  renderShortlist();
+  // Re-render results to update bookmark icons
+  if (lastResults.length) renderResults(lastResults);
+}
+
+function renderShortlist() {
+  const section = document.getElementById("shortlist-section");
+  const list = document.getElementById("shortlist");
+  if (!section || !list) return;
+
+  if (savedCareers.length === 0) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+  updateStepProgress(4);
+
+  list.innerHTML = savedCareers.map(title => {
+    const result = lastResults.find(r => r.title === title);
+    if (!result) return "";
+    const colorVar = result.bucket === "ready" ? "--ready" : result.bucket === "trainable" ? "--trainable" : "--long";
+    return `<li class="shortlist-item">
+      <div class="shortlist-info">
+        ${progressRingSVG(result.match, 36, colorVar)}
+        <div>
+          <span class="shortlist-title">${result.title}</span>
+          <span class="shortlist-meta">${result.field} &middot; <span class="badge badge-${result.bucket}">${bucketLabel(result.bucket)}</span></span>
+        </div>
+      </div>
+      <button class="btn-bookmark bookmarked" data-bookmark="${result.title}" title="Remove from shortlist">&#9733;</button>
+    </li>`;
+  }).join("");
+
+  // Bind remove buttons
+  list.querySelectorAll(".btn-bookmark").forEach(btn => {
+    btn.addEventListener("click", () => toggleBookmark(btn.dataset.bookmark));
+  });
+}
+
+// =============================================================================
 // Run scoring + render
 // =============================================================================
 function runRecommendations() {
@@ -608,13 +712,25 @@ function runRecommendations() {
     scoreTarget(userProfile, target)
   );
   lastResults = scored;
+
+  // Check for celebration: new Ready Now careers appearing
+  const newReadyCount = scored.filter(r => r.bucket === "ready").length;
+  if (newReadyCount > prevReadyCount && prevReadyCount >= 0 && hasAdjustedSliders) {
+    celebrate();
+  }
+  prevReadyCount = newReadyCount;
+
   renderResults(scored);
   renderPersonaQaMatrix(scored);
   renderQuickWins(scored, userProfile);
+  renderShortlist();
   renderRadarChart(userProfile, selectedTarget
     ? catalog.targets.find(t => t.title === selectedTarget)?.requirements
     : null
   );
+
+  // Update step progress
+  if (hasAdjustedSliders) updateStepProgress(3);
 }
 
 // =============================================================================
@@ -635,8 +751,12 @@ function applyPersona(personaKey, skipURL) {
   personaDescription.textContent = persona.description;
   currentRole.value = persona.role;
   selectedTarget = null;
+  hasAdjustedSliders = false;
+  prevReadyCount = -1; // prevent celebration on persona switch
   renderSkillInputs(persona.profile);
+  updateStepProgress(1);
   runRecommendations();
+  prevReadyCount = lastResults.filter(r => r.bucket === "ready").length;
   if (!skipURL) saveStateToURL();
 }
 
@@ -716,6 +836,15 @@ resetButton.addEventListener("click", () => {
 // Share button
 const shareBtn = document.getElementById("share-btn");
 if (shareBtn) shareBtn.addEventListener("click", handleShare);
+
+// Clear shortlist button
+const clearShortlist = document.getElementById("clear-shortlist");
+if (clearShortlist) clearShortlist.addEventListener("click", () => {
+  savedCareers = [];
+  localStorage.setItem("skillsprout_shortlist", JSON.stringify(savedCareers));
+  renderShortlist();
+  runRecommendations();
+});
 
 // Boot: try loading from URL, else use first persona
 const firstPersonaKey = Object.keys(catalog.personas)[0];

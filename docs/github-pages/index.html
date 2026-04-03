@@ -70,6 +70,31 @@
     </div>
   </section>
 
+  <!-- ============ STEP PROGRESS BAR ============ -->
+  <nav class="step-progress" id="step-progress" aria-label="Progress">
+    <div class="step-progress-inner">
+      <div class="step-node active" data-step="1">
+        <div class="step-circle">1</div>
+        <span class="step-label">Choose Persona</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-node" data-step="2">
+        <div class="step-circle">2</div>
+        <span class="step-label">Rate Skills</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-node" data-step="3">
+        <div class="step-circle">3</div>
+        <span class="step-label">View Matches</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-node" data-step="4">
+        <div class="step-circle">4</div>
+        <span class="step-label">Take Action</span>
+      </div>
+    </div>
+  </nav>
+
   <main class="layout" id="try-it">
 
     <!-- ============ PERSONA PICKER ============ -->
@@ -184,6 +209,19 @@
           <ul id="bucket-long" class="result-list"></ul>
           <p class="empty-state" id="empty-long">No careers in this tier. Your skills are well-distributed!</p>
         </article>
+      </div>
+    </section>
+
+    <!-- ============ SAVED SHORTLIST ============ -->
+    <section class="card shortlist-card" id="shortlist-section" style="display:none">
+      <div class="card-header">
+        <h2>My Shortlist</h2>
+        <span class="card-badge">Saved</span>
+      </div>
+      <p class="guidance">Careers you've bookmarked. Click the bookmark icon on any career match to add or remove it.</p>
+      <ul id="shortlist" class="shortlist-list"></ul>
+      <div class="actions">
+        <button id="clear-shortlist" class="btn btn-secondary">Clear Shortlist</button>
       </div>
     </section>
 
