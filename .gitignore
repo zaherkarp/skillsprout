@@ -63,3 +63,6 @@ Thumbs.db
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Node (client package)
+node_modules/

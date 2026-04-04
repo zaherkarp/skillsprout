@@ -1,0 +1,37 @@
+{
+  "name": "@zaherkarp/skillsprout-client",
+  "version": "1.0.0",
+  "description": "Client-side career trajectory engine powered by O*NET 28.3 — IDF-weighted Jaccard matching across 1,016 occupations",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "process-onet": "node scripts/process-onet.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zaherkarp/skillsprout.git",
+    "directory": "client"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
