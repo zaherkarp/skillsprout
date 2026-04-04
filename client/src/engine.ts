@@ -1,9 +1,10 @@
 /**
- * SkillSprout Career Trajectory Engine
+ * SkillSprout Career Trajectory Engine — Healthcare & Data Edition
  *
  * Client-side matching engine that computes career transition recommendations
- * using the full O*NET 28.3 database (1,016 occupations, 65 skill/knowledge
- * dimensions). Exposes a request/response API supporting iterative refinement.
+ * across ~256 healthcare, medical, data, and science occupations drawn from
+ * the O*NET 28.3 database. Exposes a request/response API supporting
+ * iterative refinement.
  *
  * Transition categories (per Anthropic's AI economic-impact framework):
  *   - Ready Now:        ≥55% weighted skill overlap, same or lower Job Zone
@@ -12,7 +13,7 @@
  *
  * Matching uses IDF-weighted Jaccard overlap so that ubiquitous skills
  * (e.g., "Speaking", "Active Listening") don't dominate the score while
- * specialized skills (e.g., "Medicine and Dentistry", "Physics") carry
+ * specialized skills (e.g., "Medicine and Dentistry", "Biology") carry
  * more weight.
  */
 
@@ -146,63 +147,59 @@ function suggestResources(skill: string): string[] {
   const s = skill.toLowerCase();
   const resources: string[] = [];
 
-  // Map O*NET canonical skill/knowledge names to learning resources
+  // Map O*NET canonical skill/knowledge names to healthcare/data learning resources
   const resourceMap: [string[], string[]][] = [
     [
+      ["medicine and dentistry", "therapy and counseling"],
+      ["CDC TRAIN", "Coursera Health Specializations", "AHIMA CEU Programs"],
+    ],
+    [
+      ["biology", "chemistry"],
+      ["Khan Academy Biology/Chemistry", "Coursera Bioinformatics", "NIH Training"],
+    ],
+    [
+      ["psychology", "sociology and anthropology"],
+      ["APA Online CE", "Coursera Psychology", "NIMH Training Resources"],
+    ],
+    [
       ["computers and electronics", "programming", "telecommunications"],
-      ["freeCodeCamp", "Codecademy", "MIT OpenCourseWare"],
+      ["HL7 FHIR Fundamentals", "freeCodeCamp", "Coursera Health Informatics"],
     ],
     [
-      ["mathematics", "physics", "chemistry"],
-      ["Khan Academy", "MIT OpenCourseWare", "Coursera"],
-    ],
-    [
-      ["engineering and technology", "design", "mechanical"],
-      ["Coursera Engineering", "edX", "LinkedIn Learning"],
-    ],
-    [
-      ["medicine and dentistry", "therapy and counseling", "biology"],
-      ["Coursera Health", "CDC TRAIN", "Khan Academy Biology"],
+      ["mathematics", "physics"],
+      ["Khan Academy", "MIT OpenCourseWare", "Coursera Biostatistics"],
     ],
     [
       ["administration and management", "personnel and human resources"],
-      ["Google Project Management Certificate", "LinkedIn Learning", "edX MicroMasters"],
+      ["ACHE Healthcare Leadership", "Google Project Management Certificate", "Coursera Healthcare Admin"],
     ],
     [
-      ["economics and accounting", "management of financial resources"],
-      ["Khan Academy Finance", "Coursera Finance", "edX"],
-    ],
-    [
-      ["law and government", "public safety and security"],
-      ["Coursera Law", "edX Legal Studies", "LinkedIn Learning"],
-    ],
-    [
-      ["education and training", "sociology and anthropology", "psychology"],
-      ["Coursera Education", "edX Social Science", "Khan Academy"],
-    ],
-    [
-      ["building and construction", "production and processing"],
-      ["Trade school / apprenticeship", "Union training programs", "OSHA certification"],
-    ],
-    [
-      ["fine arts", "communications and media"],
-      ["Skillshare", "MasterClass", "LinkedIn Learning"],
-    ],
-    [
-      ["customer and personal service", "sales and marketing"],
-      ["HubSpot Academy", "Google Digital Marketing", "LinkedIn Learning"],
-    ],
-    [
-      ["food production", "transportation"],
-      ["Industry certification programs", "Community college courses", "Online training"],
+      ["education and training"],
+      ["CDC TRAIN", "AHIMA Educator Resources", "Coursera Health Education"],
     ],
     [
       ["systems analysis", "systems evaluation", "operations analysis", "technology design"],
-      ["Coursera Systems Engineering", "MIT OpenCourseWare", "edX"],
+      ["Coursera Health Informatics", "AMIA 10x10", "edX Data Science"],
+    ],
+    [
+      ["economics and accounting", "management of financial resources"],
+      ["HFMA Healthcare Finance", "Coursera Healthcare Finance", "edX"],
+    ],
+    [
+      ["law and government", "public safety and security"],
+      ["HIPAA Training (HHS)", "Coursera Healthcare Law", "AHLA Resources"],
+    ],
+    [
+      ["customer and personal service", "sales and marketing"],
+      ["Patient Experience Certificate", "Coursera Health Communication", "LinkedIn Learning"],
     ],
     [
       ["complex problem solving", "critical thinking", "judgment and decision making"],
-      ["Coursera Critical Thinking", "edX", "LinkedIn Learning"],
+      ["Coursera Evidence-Based Practice", "CDC TRAIN", "edX"],
+    ],
+    [
+      ["engineering and technology", "design", "mechanical"],
+      ["Coursera Biomedical Engineering", "edX", "LinkedIn Learning"],
     ],
   ];
 
@@ -214,7 +211,7 @@ function suggestResources(skill: string): string[] {
   }
 
   if (resources.length === 0) {
-    resources.push("Coursera", "LinkedIn Learning", "edX");
+    resources.push("CDC TRAIN", "Coursera Health", "LinkedIn Learning");
   }
 
   return [...new Set(resources)].slice(0, 3);
@@ -320,9 +317,9 @@ export function getCareerTrajectories(req: TrajectoryRequest): TrajectoryRespons
       turn,
       suggestions: [
         `Did you mean: ${suggestions.join(", ")}?`,
-        "Try a standard O*NET job title or SOC code (e.g., '15-1252.00')",
+        "Try a healthcare, data, or science job title or SOC code (e.g., '29-1141.00' for Registered Nurses)",
       ],
-      error: `Could not find occupation matching "${req.sourceOccupation}". 1,016 O*NET occupations are available.`,
+      error: `Could not find occupation matching "${req.sourceOccupation}". ${occupations.length} healthcare & data occupations are available.`,
     };
   }
 

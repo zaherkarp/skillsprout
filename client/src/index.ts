@@ -1,7 +1,8 @@
 /**
  * @zaherkarp/skillsprout-client
  *
- * Client-side career trajectory engine powered by the full O*NET 28.3 database.
+ * Healthcare & data career trajectory engine powered by O*NET 28.3.
+ * Filtered to ~256 healthcare, medical, data, and science occupations.
  * Runs entirely in the browser — no data leaves the client.
  */
 

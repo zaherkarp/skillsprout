@@ -1,7 +1,7 @@
 {
   "name": "@zaherkarp/skillsprout-client",
-  "version": "1.0.0",
-  "description": "Client-side career trajectory engine powered by O*NET 28.3 — IDF-weighted Jaccard matching across 1,016 occupations",
+  "version": "2.0.0",
+  "description": "Healthcare & data career trajectory engine powered by O*NET 28.3 — IDF-weighted Jaccard matching across ~256 healthcare, medical, data, and science occupations",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

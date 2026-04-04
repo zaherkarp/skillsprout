@@ -1,8 +1,9 @@
 /**
  * SkillSprout API — stateful, iterable career trajectory API.
  *
- * This module wraps the trajectory engine in a session-based API that tracks
- * conversation state, allowing callers to iteratively refine results:
+ * Healthcare & Data Edition — wraps the trajectory engine (filtered to ~256
+ * healthcare, medical, data, and science occupations) in a session-based API
+ * that tracks conversation state, allowing callers to iteratively refine results:
  *
  *   1. Initial request: provide source occupation
  *   2. Refine: filter by category, add skills, exclude already-seen occupations
@@ -103,7 +104,7 @@ export function callApi(req: ApiRequest): ApiResult {
           action: "list_occupations",
           hasMore: false,
           totalSeenCodes: session.seenCodes.size,
-          suggestions: ["Pick an occupation and use action: 'search' with the occupation field"],
+          suggestions: ["Pick a healthcare or data occupation and use action: 'search' with the occupation field"],
         },
       };
     }
