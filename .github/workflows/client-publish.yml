@@ -40,14 +40,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Trigger portfolio rebuild
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.PORTFOLIO_DISPATCH_TOKEN }}
-          repository: zaherkarp/zaherkarp.github.io
-          event-type: skillsprout-client-updated
-          client-payload: '{"version": "${{ steps.version.outputs.version }}"}'
+      - name: Trigger portfolio site update
+        run: |
+          curl -L -X POST \
+            -H "Authorization: Bearer ${{ secrets.PORTFOLIO_DISPATCH_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/zaherkarp/zaherkarp.github.io/dispatches \
+            -d '{"event_type":"skillsprout-release"}'
