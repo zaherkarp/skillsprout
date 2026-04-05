@@ -87,7 +87,7 @@ The AI exposure data (`app/data/ai_exposure.py`) and BLS projections (`app/data/
 
 1. Update the dictionaries with new values from the source reports
 2. Run `python -m pytest tests/unit/test_ai_exposure.py tests/unit/test_bls_projections.py -v` to verify consistency
-3. Update the report generator persona data in `docs/github-pages/report.html` if affected occupations change
+3. Verify the live demo at [zaherkarp.github.io/skillsprout](https://zaherkarp.github.io/skillsprout) still renders correctly if affected occupations change
 
 ### Adding Bias Audit Improvements
 

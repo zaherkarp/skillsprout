@@ -31,17 +31,11 @@ DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./dev.db \
 ```
 
 
-### 🌐 Static Frontend (GitHub Pages)
+### 🌐 Live Demo (Portfolio Site)
 
-For a no-backend demo that works on `github.io`, use the static frontend in `docs/github-pages/` (includes a persona QA flow for someone transitioning out of fashion into three fields).
+An interactive demo runs at [zaherkarp.github.io/skillsprout](https://zaherkarp.github.io/skillsprout), powered by the `@zaherkarp/skillsprout-client` package (healthcare & data careers, O*NET 28.3). No backend required.
 
-```bash
-cd docs/github-pages
-python -m http.server 4173
-# open http://localhost:4173
-```
-
-Deployment instructions are documented in `docs/github-pages/README.md`.
+The client package source is in `client/` and publishes to GitHub Packages on each `client-v*` tag.
 
 ### Running Tests
 
@@ -870,7 +864,7 @@ The following 7 open questions were resolved by the 3-engineer team (E1 ML, E2 U
 - [x] ~~BLS labor market data integration~~ (done, `app/data/bls_projections.py`)
 - [x] ~~Anthropic Labor Market Report QA personas~~ (done, 10 personas, 68 tests in `tests/test_anthropic_report_personas.py`)
 - [x] ~~Data enrichment pipeline~~ (done, auto-discovers occupations, persists to JSON registry, `app/services/enrichment_pipeline.py`)
-- [x] ~~Career Transition Report Generator~~ (in-browser, Claude API-powered) — deployed at `docs/github-pages/report.html`
+- [x] ~~Career Transition Report Generator~~ (in-browser, Claude API-powered) — available at [zaherkarp.github.io/skillsprout](https://zaherkarp.github.io/skillsprout)
 - [ ] Load testing (target: 100 concurrent users)
 - [ ] Transition graph visualization (D3, needs sufficient user volume)
 - [ ] Multi-language support (Spanish first)
@@ -904,7 +898,7 @@ This site incorporates information from O*NET Web Services by the U.S. Departmen
 | [ADR-006](docs/adr/ADR-006-bias-audit-approach.md) | Why demographic parity testing |
 | [Modeling Notes](MODELING_NOTES.md) | Detailed scoring formulas |
 | [Docker Testing](DOCKER_TESTING.md) | Docker test environment guide |
-| [Career Report](docs/github-pages/report.html) | In-browser career transition report (Claude API) |
+| [Live Demo](https://zaherkarp.github.io/skillsprout) | Interactive career matching demo (client package) |
 | [Anthropic Report Personas](tests/test_anthropic_report_personas.py) | 10 QA personas from Anthropic Labor Market Report |
 | [Enrichment Pipeline](app/services/enrichment_pipeline.py) | Auto-discovery and persistence of occupation data |
 
