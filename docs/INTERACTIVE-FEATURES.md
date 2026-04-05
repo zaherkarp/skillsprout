@@ -221,7 +221,7 @@ When a slider adjustment causes a career to newly enter the **Ready Now** tier, 
 Skill profiles are encoded into the URL hash so users can share their exact configuration:
 
 ```
-https://zaherkarp.github.io/skillsprout/github-pages/#communication=4&customer_service=4&critical_thinking=3&programming=2&data_analysis=2&operations=3&persona=Nia+%28fashion+-%3E+new+field%29
+https://zaherkarp.github.io/skillsprout/#communication=4&customer_service=4&critical_thinking=3&programming=2&data_analysis=2&operations=3&persona=Nia+%28fashion+-%3E+new+field%29
 ```
 
 The "Share Profile" button copies this URL to the clipboard. Anyone opening the link sees the exact same skill configuration and results.
@@ -278,24 +278,20 @@ For each target career:
 |-------|-----------|-------|
 | Markup | HTML5 | Semantic, accessible |
 | Styling | CSS3 (custom properties) | Teal + amber palette, responsive |
-| Logic | Vanilla JS | Zero dependencies, ~700 lines |
+| Logic | `@zaherkarp/skillsprout-client` | Scoring engine + O*NET data |
 | Charts | Inline SVG | Radar chart + progress rings |
 | Persistence | localStorage | Shortlist bookmarks |
 | State Sharing | URL hash params | Shareable skill profiles |
-| Hosting | GitHub Pages | Auto-deployed via Actions |
+| Hosting | GitHub Pages | Auto-deployed from portfolio repo |
 | Fonts | Inter (Google Fonts) | Clean, modern typography |
 
-No frameworks. No build step. No npm. Just HTML, CSS, and JS.
+Built on the `@zaherkarp/skillsprout-client` npm package. The demo itself has no framework dependencies.
 
 ---
 
 ## Local Development
 
-```bash
-cd docs/github-pages
-python -m http.server 4173
-# open http://localhost:4173
-```
+The demo is developed in the [zaherkarp/zaherkarp.github.io](https://github.com/zaherkarp/zaherkarp.github.io) repository. See that repo for local development instructions.
 
 ---
 
