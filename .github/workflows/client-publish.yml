@@ -39,3 +39,15 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger portfolio rebuild
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PORTFOLIO_DISPATCH_TOKEN }}
+          repository: zaherkarp/zaherkarp.github.io
+          event-type: skillsprout-client-updated
+          client-payload: '{"version": "${{ steps.version.outputs.version }}"}'
