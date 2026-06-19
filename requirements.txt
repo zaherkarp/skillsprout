@@ -1,50 +1,57 @@
+# Pinned for Python 3.11–3.14. All wheels are prebuilt (no source compiles), so
+# `pip install -r requirements.txt` works on a modern interpreter as-is. These
+# versions are verified against the full test suite. The Docker image builds on
+# 3.11; `make run` uses your local Python.
+
 # FastAPI and server
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
-jinja2==3.1.3
+fastapi==0.136.3
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32
+jinja2==3.1.6
 
 # Database
-sqlalchemy==2.0.25
-alembic==1.13.1
-psycopg2-binary==2.9.9
-asyncpg==0.29.0
-aiosqlite==0.19.0
+# SQLite (via aiosqlite) works out of the box — no native build, any platform.
+# The Postgres drivers are optional and live in requirements-postgres.txt; they
+# are only needed for the full stack (docker compose --profile full).
+sqlalchemy==2.0.50
+greenlet==3.5.1          # required by SQLAlchemy's async engine
+alembic==1.18.4
+aiosqlite==0.22.1
 
 # Celery and Redis
-celery==5.3.6
-redis==5.0.1
+celery==5.6.3
+redis==8.0.0
 
 # Pydantic
-pydantic==2.5.3
-pydantic-settings==2.1.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
 
 # HTTP client
-httpx==0.26.0
-tenacity==8.2.3
+httpx==0.28.1
+tenacity==9.1.4
 
 # ML/Data science
-scikit-learn==1.4.0
-numpy==1.26.3
-pandas==2.2.0
-joblib==1.3.2
+scikit-learn==1.9.0
+numpy==2.4.6
+pandas==3.0.3
+joblib==1.5.3
 
 # Utilities
-python-dotenv==1.0.0
-python-dateutil==2.8.2
-pyyaml==6.0.1
+python-dotenv==1.2.2
+python-dateutil==2.9.0.post0
+pyyaml==6.0.3
 
 # Monitoring & Observability
-prometheus-client==0.20.0
+prometheus-client==0.25.0
 
 # Cryptography (for session tokens, data encryption)
-cryptography==42.0.2
+cryptography==48.0.1
 
 # Graph analysis (for transition graph)
-networkx==3.2.1
+networkx==3.6.1
 
 # Development/Testing
-pytest==7.4.4
-pytest-asyncio==0.23.3
-pytest-cov==4.1.0
-pytest-httpx==0.28.0
+pytest==9.0.3
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+pytest-httpx==0.36.2

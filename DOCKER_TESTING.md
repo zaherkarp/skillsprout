@@ -22,18 +22,33 @@ Complete guide for testing SkillSprout using Docker and automated testing enviro
 - Docker Compose 2.0+
 - Make (optional, for convenience commands)
 
-### Complete Development Environment (One Command)
+### Fastest path — no Docker required
+
+You do not need Docker (or Postgres, Redis, Celery, or an O*NET API key) to run
+SkillSprout. The quickest way is:
 
 ```bash
-make dev
+make run    # venv + deps + API on SQLite, served from the bundled O*NET data
 ```
 
-This single command will:
-1. Build all Docker images
-2. Start all services (PostgreSQL, Redis, API, Celery)
-3. Run database migrations
-4. Seed demo data
-5. Display access URLs
+The rest of this guide covers the Docker workflow, which is useful for
+integration testing and the optional background-job stack.
+
+### Docker development environment
+
+Two tiers:
+
+```bash
+make up        # ONE lightweight container: the API on SQLite (offline data).
+               # No Postgres, Redis, or Celery.
+
+make up-full   # The full stack: Postgres + Redis + Celery + API on Postgres.
+               # Only needed for background cache-warming / nightly retrain.
+```
+
+`make dev` = `build` + `up` (build the image, then start the lightweight API).
+The heavy services (`db`, `redis`, `celery-worker`, `celery-beat`) live behind
+the Compose `full` profile, so a bare `docker compose up` starts only the API.
 
 **Access Points:**
 - Web UI: http://localhost:8000
@@ -77,7 +92,12 @@ docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 
 ### Services
 
-1. **db**: PostgreSQL 15 database
+> By default (`make up`) only the **api** service runs, on SQLite. The services
+> below marked *(full profile)* start only with `make up-full` (or
+> `docker compose --profile full up`). The **test** runner starts them via the
+> `test` profile.
+
+1. **db**: PostgreSQL 15 database *(full profile)*
    - Port: 5432
    - Credentials: skillsprout/skillsprout_password
    - Volume: `postgres_data`

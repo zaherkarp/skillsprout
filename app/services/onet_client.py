@@ -700,14 +700,33 @@ class MockONetClient(ONetClient):
 
 
 def get_onet_client() -> ONetClient:
-    """Factory function to get appropriate O*NET client.
+    """Factory function to get the appropriate O*NET client.
 
-    Returns:
-        ONetClient or MockONetClient based on configuration
+    Selection:
+      - Live ``ONetClient`` when credentials are configured and demo mode is off.
+      - Otherwise an offline client (no network, no credentials), chosen by
+        ``settings.onet_offline_source``:
+          * ``"file"`` (default) -> ``OfflineONetClient``, served from the
+            vendored O*NET snapshot (~1,000 occupations).
+          * ``"mock"``           -> ``MockONetClient``, the small deterministic
+            fixture set used by the test suite.
+      - If the offline data file is missing, falls back to ``MockONetClient``.
     """
-    if settings.is_demo_mode:
-        logger.info("Using MockONetClient (demo mode)")
-        return MockONetClient()
-    else:
+    if not settings.is_demo_mode:
         logger.info("Using ONetClient (live mode)")
         return ONetClient()
+
+    if (settings.onet_offline_source or "file").lower() == "mock":
+        logger.info("Using MockONetClient (offline fixtures)")
+        return MockONetClient()
+
+    try:
+        # Imported lazily to avoid a circular import (onet_offline imports this module).
+        from app.services.onet_offline import OfflineONetClient
+
+        client = OfflineONetClient()
+        logger.info("Using OfflineONetClient (vendored O*NET snapshot)")
+        return client
+    except Exception as e:
+        logger.warning("Offline dataset unavailable (%s); using MockONetClient", e)
+        return MockONetClient()

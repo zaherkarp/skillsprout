@@ -33,12 +33,19 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"
 
-    # O*NET Web Services
+    # O*NET Web Services (optional — leave credentials blank to run fully offline)
     onet_username: str = ""
     onet_password: str = ""
     onet_base_url: str = "https://services.onetcenter.org/ws"
     onet_timeout: int = 30
     onet_max_retries: int = 3
+
+    # Offline O*NET source (used whenever credentials are blank / demo mode):
+    #   "file" -> OfflineONetClient, served from the vendored O*NET snapshot
+    #             (onet_offline_data_path, ~1,000 occupations). This is the default.
+    #   "mock" -> MockONetClient, the small deterministic fixture set (used by tests).
+    onet_offline_source: str = "file"
+    onet_offline_data_path: str = "client/data/onet-full.json"
 
     # Demo Mode
     demo_mode: bool = False
@@ -69,6 +76,12 @@ class Settings(BaseSettings):
     # Background Tasks
     cache_warm_batch_size: int = 50
     periodic_training_cron: str = "0 2 * * *"
+
+    # Run the data-enrichment pipeline on app startup. Off by default so a normal
+    # boot is fast and never rewrites the committed occupation_registry.json.
+    # Enrichment still runs via Celery beat, the /enrichment/run endpoint, or the
+    # CLI (python -m app.services.enrichment_pipeline).
+    run_startup_enrichment: bool = False
 
     @property
     def is_demo_mode(self) -> bool:

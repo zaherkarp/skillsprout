@@ -4,6 +4,11 @@ import asyncio
 import os
 from typing import AsyncGenerator
 
+# The suite asserts against the deterministic MockONetClient fixtures, not the
+# full vendored O*NET snapshot. Pin the offline source BEFORE app settings are
+# imported below (settings is instantiated at first import of app.core.config).
+os.environ.setdefault("ONET_OFFLINE_SOURCE", "mock")
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool, StaticPool
 from sqlalchemy import text

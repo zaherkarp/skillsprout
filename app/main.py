@@ -63,17 +63,36 @@ async def lifespan(app: FastAPI):
     logger.info(f"Demo mode: {settings.is_demo_mode}")
     mark_startup()
 
-    # Run data enrichment pipeline on startup
+    # First-run schema bootstrap for SQLite (local / no-Docker dev). Postgres
+    # deployments create tables via Alembic migrations, so this is skipped there.
     try:
-        from app.services.enrichment_pipeline import EnrichmentPipeline
-        from app.services.occupation_registry import OccupationRegistry
-        pipeline = EnrichmentPipeline(
-            registry=OccupationRegistry(),
-        )
-        result = await pipeline.run(skip_discovery=settings.is_demo_mode)
-        logger.info(f"Enrichment pipeline: {result}")
+        from app.db.session import async_engine, Base
+        import app.models.models  # noqa: F401  register core tables on Base.metadata
+        import app.core.privacy.retention_policy  # noqa: F401  deletion_audit_log table
+        if async_engine.url.get_backend_name().startswith("sqlite"):
+            async with async_engine.begin() as conn:
+                await conn.run_sync(lambda sync_conn: Base.metadata.create_all(bind=sync_conn))
+            logger.info("SQLite schema ensured (Base.metadata.create_all)")
     except Exception as e:
-        logger.warning(f"Enrichment pipeline skipped: {e}")
+        logger.warning(f"Schema bootstrap skipped: {e}")
+
+    # Optionally run the data enrichment pipeline on startup. Off by default: a
+    # normal boot stays fast and does NOT rewrite the committed registry file.
+    # Enable with RUN_STARTUP_ENRICHMENT=true (also runs via Celery beat, the
+    # /api/v1/enrichment/run endpoint, or the CLI).
+    if settings.run_startup_enrichment:
+        try:
+            from app.services.enrichment_pipeline import EnrichmentPipeline
+            from app.services.occupation_registry import OccupationRegistry
+            pipeline = EnrichmentPipeline(
+                registry=OccupationRegistry(),
+            )
+            result = await pipeline.run(skip_discovery=settings.is_demo_mode)
+            logger.info(f"Enrichment pipeline: {result}")
+        except Exception as e:
+            logger.warning(f"Enrichment pipeline skipped: {e}")
+    else:
+        logger.info("Startup enrichment disabled (set RUN_STARTUP_ENRICHMENT=true to enable)")
 
     yield
 

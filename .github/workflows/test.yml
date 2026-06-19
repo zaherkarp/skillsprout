@@ -108,10 +108,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run unit tests
+        # No O*NET credentials: the suite runs fully offline (no external API).
         env:
-          DEMO_MODE: ${{ secrets.ONET_USERNAME && 'false' || 'true' }}
-          ONET_USERNAME: ${{ secrets.ONET_USERNAME }}
-          ONET_PASSWORD: ${{ secrets.ONET_PASSWORD }}
+          DEMO_MODE: "true"
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           DATABASE_URL_SYNC: "sqlite:///:memory:"
         run: |
@@ -149,9 +148,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build and run integration tests
-        env:
-          ONET_USERNAME: ${{ secrets.ONET_USERNAME }}
-          ONET_PASSWORD: ${{ secrets.ONET_PASSWORD }}
+        # Runs fully offline (no O*NET credentials / external API).
         run: |
           docker compose -f docker-compose.test.yml build
           docker compose -f docker-compose.test.yml up \

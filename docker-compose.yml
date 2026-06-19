@@ -18,6 +18,7 @@ services:
       retries: 5
     networks:
       - skillsprout-network
+    profiles: ["full", "test"]    # optional: only the full stack / test runner need Postgres
 
   # Redis for Celery
   redis:
@@ -34,6 +35,7 @@ services:
       retries: 5
     networks:
       - skillsprout-network
+    profiles: ["full", "test"]    # optional: only the full stack / test runner need Redis
 
   # FastAPI Application
   api:
@@ -52,19 +54,14 @@ services:
       API_HOST: 0.0.0.0
       API_PORT: 8000
 
-      # Database
-      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout
-      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout
+      # Database — SQLite by default (no Postgres needed). docker-compose.full.yml
+      # re-points this at Postgres for the full stack (`make up-full`).
+      DATABASE_URL: sqlite+aiosqlite:////app/var/skillsprout.db
+      DATABASE_URL_SYNC: sqlite:////app/var/skillsprout.db
 
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-
-      # Celery
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
-
-      # O*NET (Demo mode by default)
+      # O*NET — fully offline against the bundled snapshot (no credentials).
       DEMO_MODE: "true"
+      ONET_OFFLINE_SOURCE: "file"
       ONET_USERNAME: ""
       ONET_PASSWORD: ""
 
@@ -87,12 +84,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-      - model_artifacts:/app/models
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - sqlite_data:/app/var          # persistent SQLite file (survives restarts)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -101,15 +93,8 @@ services:
       start_period: 40s
     networks:
       - skillsprout-network
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 5 &&
-        echo 'Running migrations...' &&
-        alembic upgrade head &&
-        echo 'Starting FastAPI server...' &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-      "
+    # SQLite schema is created on startup by app.main's lifespan — no Alembic needed.
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # Celery Worker
   celery-worker:
@@ -153,6 +138,7 @@ services:
         condition: service_healthy
     networks:
       - skillsprout-network
+    profiles: ["full"]    # optional background worker; nothing on the request path uses it
     command: celery -A app.tasks.celery_app worker --loglevel=info
 
   # Celery Beat (Periodic Tasks) - Optional
@@ -195,6 +181,7 @@ services:
         condition: service_healthy
     networks:
       - skillsprout-network
+    profiles: ["full"]    # optional periodic scheduler (nightly retrain)
     command: celery -A app.tasks.celery_app beat --loglevel=info
 
   # Test Runner (for running tests in isolated environment)
@@ -250,6 +237,8 @@ volumes:
   redis_data:
     driver: local
   model_artifacts:
+    driver: local
+  sqlite_data:
     driver: local
 
 networks:

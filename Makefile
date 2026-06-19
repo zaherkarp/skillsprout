@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs logs-api logs-celery logs-db shell-api shell-db test seed clean prune migrate health dev-local check-docker
+.PHONY: help build up up-full down restart logs logs-api logs-celery logs-db shell-api shell-db test seed clean prune migrate health run dev-local check-docker
 
 # Colors for terminal output
 GREEN  := \033[0;32m
@@ -28,17 +28,28 @@ build: check-docker ## Build Docker images
 	@echo "$(YELLOW)Building Docker images...$(RESET)"
 	docker compose build
 
-up: check-docker ## Start all services
-	@echo "$(GREEN)Starting all services...$(RESET)"
+up: check-docker ## Start the lightweight API container (SQLite + offline data; no Postgres/Redis/Celery)
+	@echo "$(GREEN)Starting the SkillSprout API (SQLite, bundled O*NET data)...$(RESET)"
 	docker compose up -d
-	@echo "$(GREEN)✓ Services started!$(RESET)"
+	@echo "$(GREEN)✓ API started!$(RESET)"
 	@echo ""
 	@echo "$(YELLOW)Available at:$(RESET)"
 	@echo "  - Web UI:    http://localhost:8000"
 	@echo "  - API Docs:  http://localhost:8000/api/v1/docs"
 	@echo "  - Health:    http://localhost:8000/api/v1/health"
 	@echo ""
-	@echo "$(YELLOW)Run 'make logs' to see output$(RESET)"
+	@echo "$(YELLOW)Need Postgres + Redis + Celery? Run 'make up-full'. Logs: 'make logs'.$(RESET)"
+
+up-full: check-docker ## Start the full stack (Postgres, Redis, Celery + API on Postgres)
+	@echo "$(GREEN)Starting full stack (Postgres + Redis + Celery + API)...$(RESET)"
+	docker compose -f docker-compose.yml -f docker-compose.full.yml --profile full up -d
+	@echo "$(GREEN)✓ Full stack started!$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)Available at:$(RESET)"
+	@echo "  - Web UI:    http://localhost:8000"
+	@echo "  - API Docs:  http://localhost:8000/api/v1/docs"
+	@echo ""
+	@echo "$(YELLOW)Stop with 'make down'. Logs: 'make logs'.$(RESET)"
 
 down: ## Stop all services
 	@echo "$(YELLOW)Stopping all services...$(RESET)"
@@ -123,7 +134,7 @@ prune: ## Remove all Docker resources (including images)
 		echo "$(YELLOW)Cancelled$(RESET)"; \
 	fi
 
-dev: build up seed ## Full dev environment setup (build, start, seed)
+dev: build up ## Full Docker dev environment (build + start the lightweight API)
 	@echo ""
 	@echo "$(GREEN)========================================$(RESET)"
 	@echo "$(GREEN)✓ Development environment ready!$(RESET)"
@@ -142,30 +153,30 @@ dev: build up seed ## Full dev environment setup (build, start, seed)
 	@echo "  - make down       - Stop all services"
 	@echo ""
 
-dev-local: ## Run locally without Docker (SQLite, no Redis/Celery)
-	@echo "$(GREEN)Starting SkillSprout locally (no Docker required)...$(RESET)"
-	@echo ""
-	@command -v python3 >/dev/null 2>&1 || { echo "$(YELLOW)ERROR: python3 is not installed.$(RESET)"; exit 1; }
-	@if [ ! -d ".venv" ]; then \
-		echo "$(YELLOW)Creating virtual environment...$(RESET)"; \
-		python3 -m venv .venv; \
-	fi
-	@echo "$(YELLOW)Installing dependencies...$(RESET)"
-	@. .venv/bin/activate && pip install -r requirements.txt --quiet
-	@echo "$(YELLOW)Starting FastAPI server...$(RESET)"
-	@echo ""
-	@echo "$(GREEN)========================================$(RESET)"
-	@echo "$(GREEN)  Development server starting!$(RESET)"
-	@echo "$(GREEN)========================================$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)Available at:$(RESET)"
-	@echo "  - Web UI:    http://localhost:8000"
-	@echo "  - API Docs:  http://localhost:8000/api/v1/docs"
-	@echo ""
-	@echo "$(YELLOW)Note: Using SQLite (in-memory) and demo mode.$(RESET)"
-	@echo "$(YELLOW)Celery tasks will run synchronously.$(RESET)"
-	@echo ""
-	@. .venv/bin/activate && DEMO_MODE=true uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+run: ## Run locally — no Docker, no Postgres/Redis/Celery, no API key (SQLite + bundled O*NET data)
+	@PY="$$(command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3 || true)"; \
+	if [ -z "$$PY" ]; then echo "$(YELLOW)ERROR: Python 3.11+ is required and was not found.$(RESET)"; exit 1; fi; \
+	echo "$(GREEN)Starting SkillSprout locally with $$($$PY --version 2>&1) — no Docker, no services, no API key.$(RESET)"; \
+	if [ ! -d ".venv" ]; then echo "$(YELLOW)Creating virtual environment...$(RESET)"; "$$PY" -m venv .venv; fi; \
+	. .venv/bin/activate; \
+	echo "$(YELLOW)Installing dependencies...$(RESET)"; \
+	pip install -q --upgrade pip; \
+	pip install -q -r requirements.txt; \
+	echo ""; \
+	echo "$(GREEN)===========================================$(RESET)"; \
+	echo "$(GREEN)  SkillSprout — local, offline, no API key$(RESET)"; \
+	echo "$(GREEN)===========================================$(RESET)"; \
+	echo "  Web UI:   http://localhost:8000"; \
+	echo "  API Docs: http://localhost:8000/api/v1/docs"; \
+	echo "  Data:     bundled O*NET 28.3 snapshot (~1,000 occupations, no credentials)"; \
+	echo "  Database: ./skillsprout.db (SQLite; persists across restarts)"; \
+	echo ""; \
+	DEMO_MODE=true ONET_OFFLINE_SOURCE=file DEBUG=false \
+		DATABASE_URL="sqlite+aiosqlite:///./skillsprout.db" \
+		DATABASE_URL_SYNC="sqlite:///./skillsprout.db" \
+		uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+dev-local: run ## Alias for 'make run' (local, no Docker)
 
 quick-start: ## Quick start without building (uses cached images)
 	@echo "$(GREEN)Quick starting services...$(RESET)"

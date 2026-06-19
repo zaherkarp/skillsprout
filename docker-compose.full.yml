@@ -1,0 +1,31 @@
+# Full-stack override for docker-compose.yml.
+#
+# Use with `make up-full`, or directly:
+#   docker compose -f docker-compose.yml -f docker-compose.full.yml --profile full up -d
+#
+# The base file runs a single lightweight API on SQLite. This override re-points
+# the API at Postgres + Redis and restores Alembic migrations; the `full` profile
+# brings up the db / redis / celery services defined in the base file.
+services:
+  api:
+    environment:
+      # Override the base SQLite URLs with Postgres for the full stack.
+      DATABASE_URL: postgresql+asyncpg://skillsprout:skillsprout_password@db:5432/skillsprout
+      DATABASE_URL_SYNC: postgresql+psycopg2://skillsprout:skillsprout_password@db:5432/skillsprout
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting FastAPI server...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "

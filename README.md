@@ -16,19 +16,28 @@ It then generates structured explanations, skill-gap analyses, and personalized 
 
 ### Quickstart: Setup and Verify
 
-```bash
-# Option A: Docker (recommended, starts all services)
-make dev                    # PostgreSQL, Redis, FastAPI, Celery
-open http://localhost:8000  # Web UI
-open http://localhost:8000/api/v1/docs  # Swagger
+SkillSprout runs **fully offline with no API key**: occupation data is served
+from a bundled O*NET 28.3 snapshot (~1,000 occupations in
+`client/data/onet-full.json`), so the O*NET Web Services API is optional. Add
+`ONET_USERNAME`/`ONET_PASSWORD` only if you want live data.
 
-# Option B: Local with SQLite (no external services needed)
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./dev.db \
-  DATABASE_URL_SYNC=sqlite:///./dev.db \
-  uvicorn app.main:app --reload
+```bash
+# Option A: No Docker, no services, no API key (fastest) — SQLite + bundled data.
+make run                    # creates a venv, installs deps, starts the API
+open http://localhost:8000  # Web UI  ·  /api/v1/docs for Swagger
+
+# Option B: One lightweight Docker container (SQLite, offline).
+make up                     # just the API; no Postgres/Redis/Celery
+make down                   # stop it
+
+# Option C: The full stack (only if you need background jobs / Postgres).
+make up-full                # Postgres + Redis + Celery + API on Postgres
 ```
+
+`make run` writes a persistent `./skillsprout.db` (SQLite), so your data
+survives restarts. It targets Python 3.11+ and picks the newest interpreter it
+finds. Postgres drivers are optional and live in `requirements-postgres.txt`
+(installed automatically in the Docker image; not needed for `make run`).
 
 
 ### 🌐 Live Demo (Portfolio Site)

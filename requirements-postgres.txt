@@ -1,0 +1,10 @@
+# Postgres drivers — OPTIONAL.
+#
+# The app runs on SQLite out of the box (aiosqlite, in requirements.txt). These
+# drivers are only needed to point it at a Postgres database, i.e. the full
+# Docker stack (docker compose --profile full). They are installed into the
+# Docker image so that profile works; the no-Docker `make run` path skips them.
+#
+# Install with:  pip install -r requirements-postgres.txt
+psycopg2-binary==2.9.10
+asyncpg==0.30.0

@@ -15,8 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install core deps + the optional Postgres drivers, so the shared image can run
+# either the lightweight SQLite API (default) or the full Postgres stack.
+COPY requirements.txt requirements-postgres.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-postgres.txt
 
 # Stage 2: Development image (with source mounting and hot reload)
 FROM builder AS development
