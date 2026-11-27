@@ -74,7 +74,13 @@ jobs:
           retention-days: 30
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        # Pinned to the full commit SHA of the signed v0.36.0 release tag, not a branch or tag
+        # name. "@master" ran whatever was on trivy-action's master at run time, in a job that
+        # holds security-events: write. Tags are mutable too (trivy-action's own tags were
+        # force-pushed to malicious commits in March 2026), so only a SHA is immutable.
+        # To upgrade: take the new release's commit SHA from github.com/aquasecurity/trivy-action
+        # and update both the SHA and this tag comment together.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         continue-on-error: true
         with:
           scan-type: 'fs'
