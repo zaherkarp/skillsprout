@@ -14,6 +14,7 @@ protected routes. It is intentionally simple -- the infra audit flagged
 deployment without breaking the development workflow.
 """
 
+import hmac
 import logging
 from typing import Set
 
@@ -66,7 +67,15 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
 
         # Check API key
         api_key = request.headers.get("X-API-Key", "")
-        if not api_key or api_key != settings.api_key:
+        # hmac.compare_digest takes the same time however many leading
+        # characters match, so response timing does not leak the key. The
+        # empty checks keep an unset API_KEY from matching an empty header
+        # (auth on with no key configured stays closed).
+        if (
+            not api_key
+            or not settings.api_key
+            or not hmac.compare_digest(api_key.encode(), settings.api_key.encode())
+        ):
             logger.warning(
                 "Unauthorized request to %s from %s",
                 path,

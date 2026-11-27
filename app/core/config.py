@@ -19,8 +19,21 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # API
-    api_host: str = "0.0.0.0"
+    # Loopback by default, so running the app directly (`python -m app.main`)
+    # does not expose it to the network. Docker and docker-compose pass
+    # `--host 0.0.0.0` explicitly because the container needs it.
+    api_host: str = "127.0.0.1"
     api_port: int = 8000
+
+    # Cross-origin access. Comma-separated list of browser origins allowed to
+    # call the API from another site, e.g.
+    #   CORS_ALLOW_ORIGINS=https://app.example.com,http://localhost:5173
+    # Empty (the default) allows none. The bundled UI is served by this app on
+    # the same origin, so it needs no CORS at all. The old default (`*` with
+    # credentials) let any web page the user visited read, change and delete
+    # profiles on an instance running on their machine, because the browser
+    # was told every origin was allowed.
+    cors_allow_origins: str = ""
 
     # Database
     database_url: str = "sqlite+aiosqlite:///:memory:"
@@ -82,6 +95,11 @@ class Settings(BaseSettings):
     # Enrichment still runs via Celery beat, the /enrichment/run endpoint, or the
     # CLI (python -m app.services.enrichment_pipeline).
     run_startup_enrichment: bool = False
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """CORS_ALLOW_ORIGINS split into a clean list (blank entries dropped)."""
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
 
     @property
     def is_demo_mode(self) -> bool:

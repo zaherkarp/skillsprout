@@ -630,6 +630,8 @@ Key environment variables:
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
 | `AUTH_ENABLED` | Enable API key authentication | `false` |
 | `API_KEY` | API key for protected endpoints | - |
+| `CORS_ALLOW_ORIGINS` | Comma-separated browser origins allowed to call the API cross-site (the bundled UI is same-origin and needs none) | empty (none) |
+| `API_HOST` | Bind address when run with `python -m app.main` (Docker passes `0.0.0.0`) | `127.0.0.1` |
 | `ONET_USERNAME` | O*NET Web Services username | - |
 | `ONET_PASSWORD` | O*NET Web Services password | - |
 | `DEMO_MODE` | Use mock O*NET data | `false` |
@@ -667,7 +669,7 @@ Without credentials, the app runs in demo mode with 14+ mock occupations (includ
 2. **Security**:
    - Set strong database passwords
    - Use HTTPS for API
-   - Restrict CORS origins in `app/main.py` (currently `["*"]`)
+   - CORS allows no cross-site origins by default; list any separate frontend in `CORS_ALLOW_ORIGINS`
    - Set `SKILLSPROUT_SESSION_KEY` env var for stable Fernet encryption
 
 3. **Database**:

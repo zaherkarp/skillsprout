@@ -113,12 +113,19 @@ app = FastAPI(
 app.add_middleware(APIKeyAuthMiddleware)
 
 # CORS middleware
+# Only origins listed in CORS_ALLOW_ORIGINS may call the API from another
+# site; by default none may (see Settings.cors_allow_origins for why).
+# - allow_credentials=False: the API uses no cookies, and Starlette answers a
+#   credentialed request under "*" by echoing the caller's origin back, which
+#   is what made the old setting allow every site.
+# - Methods and headers are the ones the API and its UI actually use, so a
+#   listed origin still cannot send arbitrary headers.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict to specific origins in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
 
 # Mount static files
