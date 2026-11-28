@@ -340,7 +340,9 @@ curl -X POST http://localhost:8000/api/v1/user/profile \
   -H "Content-Type: application/json" \
   -d '{}'
 
-# Response: {"id": 1, "created_at": "2026-01-19T..."}
+# Response: {"id": 1, "owner_token": "...", "created_at": "2026-01-19T..."}
+# owner_token is shown once. Every /user/1/... call below must send it:
+TOKEN="<owner_token from the response>"
 
 # 2. Search for occupations
 curl "http://localhost:8000/api/v1/occupations/search?q=software"
@@ -348,6 +350,7 @@ curl "http://localhost:8000/api/v1/occupations/search?q=software"
 # 3. Set current occupation
 curl -X POST http://localhost:8000/api/v1/user/1/current-occupation \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{"onet_code": "15-1252.00"}'
 
 # 4. Get occupation skills
@@ -356,6 +359,7 @@ curl "http://localhost:8000/api/v1/occupations/15-1252.00/skills"
 # 5. Rate your skills
 curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{
     "ratings": [
       {"element_id": "2.B.1.a", "rating_0_4": 3},
@@ -367,6 +371,7 @@ curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings \
 # 6. Get recommendations
 curl -X POST http://localhost:8000/api/v1/user/1/recommendations \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{
     "limit_per_bucket": 10,
     "use_calibration": false,

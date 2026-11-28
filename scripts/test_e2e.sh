@@ -13,6 +13,10 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 API_URL="${API_URL:-http://localhost:8000}"
+# Owner token of the profile this run creates. Every /user/{id} call must send
+# it as X-Profile-Token (see app/core/profile_ownership.py); call_endpoint adds
+# the header whenever this is non-empty.
+PROFILE_TOKEN=""
 PASSED=0
 FAILED=0
 
@@ -43,11 +47,19 @@ call_endpoint() {
 
     echo -n "  Testing: $name... "
 
+    # Send the owner token only when we hold one, so calls made before the
+    # profile exists (health, search) look exactly as they did before.
+    local token_header=()
+    if [ -n "$PROFILE_TOKEN" ]; then
+        token_header=(-H "X-Profile-Token: $PROFILE_TOKEN")
+    fi
+
     if [ "$method" == "GET" ]; then
-        response=$(curl -s -w "\n%{http_code}" "$API_URL$endpoint")
+        response=$(curl -s -w "\n%{http_code}" "${token_header[@]}" "$API_URL$endpoint")
     else
         response=$(curl -s -w "\n%{http_code}" -X "$method" \
             -H "Content-Type: application/json" \
+            "${token_header[@]}" \
             -d "$data" \
             "$API_URL$endpoint")
     fi
@@ -102,6 +114,19 @@ if [ -z "$user_id" ]; then
     echo -e "${RED}Failed to extract user ID${NC}"
     exit 1
 fi
+
+# The creation response carries the profile's owner token exactly once.
+created_token=$(echo "$BODY" | json_field '["owner_token"]')
+if [ -z "$created_token" ] || [ "$created_token" == "null" ]; then
+    echo -e "${RED}Create response had no owner_token${NC}"
+    exit 1
+fi
+
+# Before using the token, confirm a caller without it is refused. This is the
+# whole point of the token, so the end-to-end run should prove it.
+call_endpoint "Refuse Caller Without Token" "GET" "/api/v1/user/$user_id/data-export" "" 403
+
+PROFILE_TOKEN="$created_token"
 
 # 3. Search Occupations
 echo -e "\n${YELLOW}Step 2: Search Occupations${NC}"
