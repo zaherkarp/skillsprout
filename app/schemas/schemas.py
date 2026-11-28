@@ -50,6 +50,10 @@ class UserProfileResponse(BaseModel):
     id: int
     created_at: datetime
     metadata: Optional[Dict[str, Any]] = None
+    # Set only in the response that creates the profile, and never again.
+    # The client must keep it and send it as X-Profile-Token on every call
+    # for this profile (see app/core/profile_ownership.py).
+    owner_token: Optional[str] = None
 
     class Config:
         from_attributes = True

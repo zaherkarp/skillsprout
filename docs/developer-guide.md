@@ -63,9 +63,10 @@ curl http://localhost:8000/api/v1/health
 
 # Create a user, set occupation, rate skills, get recommendations
 curl -X POST http://localhost:8000/api/v1/user/profile -H "Content-Type: application/json" -d '{}'
-curl -X POST http://localhost:8000/api/v1/user/1/current-occupation -H "Content-Type: application/json" -d '{"onet_code": "15-1252.00"}'
-curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings -H "Content-Type: application/json" -d '{"ratings": [{"element_id": "2.B.1.g", "rating_0_4": 4}, {"element_id": "2.B.8.a", "rating_0_4": 3}]}'
-curl -X POST http://localhost:8000/api/v1/user/1/recommendations -H "Content-Type: application/json" -d '{"limit_per_bucket": 5}'
+TOKEN="<owner_token from that response; shown once>"
+curl -X POST http://localhost:8000/api/v1/user/1/current-occupation -H "X-Profile-Token: $TOKEN" -H "Content-Type: application/json" -d '{"onet_code": "15-1252.00"}'
+curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings -H "X-Profile-Token: $TOKEN" -H "Content-Type: application/json" -d '{"ratings": [{"element_id": "2.B.1.g", "rating_0_4": 4}, {"element_id": "2.B.8.a", "rating_0_4": 3}]}'
+curl -X POST http://localhost:8000/api/v1/user/1/recommendations -H "X-Profile-Token: $TOKEN" -H "Content-Type: application/json" -d '{"limit_per_bucket": 5}'
 ```
 
 ---

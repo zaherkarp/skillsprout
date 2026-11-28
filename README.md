@@ -150,6 +150,7 @@ Two teams with different QA approaches (scenario-driven vs. invariant-driven) me
 4. **Demo mode** activates when O\*NET credentials are absent. Uses `MockONetClient` with 14+ occupations (expanded with Anthropic report positions). All tests run in demo mode by default.
 6. **Data enrichment pipeline** runs on startup, seeding static data and (when credentials are available) discovering new occupations via O\*NET API. All data persists to `app/data/occupation_registry.json` and grows across runs.
 5. **Privacy**: GDPR data export (`/api/v1/user/{id}/data-export`) and deletion endpoints are implemented. Private mode suppresses all writes. Review with legal before production.
+7. **Per-profile ownership** (`app/core/profile_ownership.py`). Creating a profile returns an `owner_token` once; every API call that names that profile (in the path, `?user_id=`, or a JSON `user_id`) must send it as `X-Profile-Token`, or gets 403. Only a SHA-256 hash is stored. The bundled UI keeps the token in the browser's localStorage. This is separate from `AUTH_ENABLED`: the API key says "this client may use the app", the owner token says "this caller owns profile N". See [Profile ownership](#profile-ownership) below.
 
 ### Outstanding Questions for Leadership Decision
 
@@ -339,7 +340,9 @@ curl -X POST http://localhost:8000/api/v1/user/profile \
   -H "Content-Type: application/json" \
   -d '{}'
 
-# Response: {"id": 1, "created_at": "2026-01-19T..."}
+# Response: {"id": 1, "owner_token": "...", "created_at": "2026-01-19T..."}
+# owner_token is shown once. Every /user/1/... call below must send it:
+TOKEN="<owner_token from the response>"
 
 # 2. Search for occupations
 curl "http://localhost:8000/api/v1/occupations/search?q=software"
@@ -347,6 +350,7 @@ curl "http://localhost:8000/api/v1/occupations/search?q=software"
 # 3. Set current occupation
 curl -X POST http://localhost:8000/api/v1/user/1/current-occupation \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{"onet_code": "15-1252.00"}'
 
 # 4. Get occupation skills
@@ -355,6 +359,7 @@ curl "http://localhost:8000/api/v1/occupations/15-1252.00/skills"
 # 5. Rate your skills
 curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{
     "ratings": [
       {"element_id": "2.B.1.a", "rating_0_4": 3},
@@ -366,6 +371,7 @@ curl -X POST http://localhost:8000/api/v1/user/1/skills/ratings \
 # 6. Get recommendations
 curl -X POST http://localhost:8000/api/v1/user/1/recommendations \
   -H "Content-Type: application/json" \
+  -H "X-Profile-Token: $TOKEN" \
   -d '{
     "limit_per_bucket": 10,
     "use_calibration": false,
@@ -630,6 +636,7 @@ Key environment variables:
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
 | `AUTH_ENABLED` | Enable API key authentication | `false` |
 | `API_KEY` | API key for protected endpoints | - |
+| `PROFILE_TOKENS_REQUIRED` | Require each profile's owner token (`X-Profile-Token`) on every API call that names it | `true` |
 | `CORS_ALLOW_ORIGINS` | Comma-separated browser origins allowed to call the API cross-site (the bundled UI is same-origin and needs none) | empty (none) |
 | `API_HOST` | Bind address when run with `python -m app.main` (Docker passes `0.0.0.0`) | `127.0.0.1` |
 | `ONET_USERNAME` | O*NET Web Services username | - |
@@ -657,6 +664,22 @@ To use real O*NET data:
 
 Without credentials, the app runs in demo mode with 14+ mock occupations (including all positions from the Anthropic Labor Market Report).
 
+## Profile ownership
+
+Profiles are anonymous and numbered, so the number alone must not unlock one. When a profile is created (`POST /api/v1/user/profile` or `POST /api/v1/profile`), the response includes `owner_token`. It is shown once. Send it as the `X-Profile-Token` header on every later call for that profile; without it, or with another profile's token, the API answers 403. The bundled UI does this for you and keeps the token in the browser that created the profile.
+
+To open a profile in another browser, use `/flow/<id>#token=<token>`. The part after `#` stays in the browser; the page saves it and removes it from the address bar.
+
+**Profiles created before owner tokens existed** have no token and are locked (no one can prove they own them). The schema change is automatic: SQLite databases get the new column at startup, and Postgres gets it from `alembic upgrade head`. To hand a profile back to its owner:
+
+```bash
+python -m app.core.profile_ownership unclaimed        # list locked profiles
+python -m app.core.profile_ownership issue 7           # print a token and a /flow/7#token=... link, once
+python -m app.core.profile_ownership issue 7 --rotate  # replace a token (locks out the old holder)
+```
+
+`PROFILE_TOKENS_REQUIRED=false` turns the check off, for single-user local use or while migrating.
+
 ## Production Considerations
 
 ### Before Deploying
@@ -670,6 +693,7 @@ Without credentials, the app runs in demo mode with 14+ mock occupations (includ
    - Set strong database passwords
    - Use HTTPS for API
    - CORS allows no cross-site origins by default; list any separate frontend in `CORS_ALLOW_ORIGINS`
+   - Keep `PROFILE_TOKENS_REQUIRED=true` and issue tokens for any profiles created before it (see [Profile ownership](#profile-ownership))
    - Set `SKILLSPROUT_SESSION_KEY` env var for stable Fernet encryption
 
 3. **Database**:

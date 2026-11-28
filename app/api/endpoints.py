@@ -3,7 +3,7 @@ import logging
 from typing import List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import joinedload
@@ -26,6 +26,7 @@ from app.schemas.schemas import (
 from app.services.onet_client import get_onet_client, ONetClientError
 from app.ml.scoring import get_baseline_scorer
 from app.core.config import settings
+from app.core.profile_ownership import TOKEN_HEADER, ensure_profile_owner, new_owner_token
 
 logger = logging.getLogger(__name__)
 
@@ -265,11 +266,18 @@ async def create_user_profile(
     request: UserProfileCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new user profile."""
+    """Create a new user profile.
+
+    The response carries ``owner_token``, shown this once. Every later call
+    for this profile must send it as ``X-Profile-Token``; only its hash is
+    stored (see app/core/profile_ownership.py).
+    """
     try:
+        token, token_hash = new_owner_token()
         user = UserProfile(
             created_at=datetime.utcnow(),
             metadata_json=request.metadata,
+            owner_token_hash=token_hash,
         )
         db.add(user)
         await db.commit()
@@ -279,6 +287,7 @@ async def create_user_profile(
             id=user.id,
             created_at=user.created_at,
             metadata=user.metadata_json,
+            owner_token=token,
         )
     except Exception as e:
         logger.error(f"Error creating user profile: {e}")
@@ -643,6 +652,7 @@ async def get_recommendations(
 @router.post("/feedback", response_model=UserFeedbackResponse, status_code=201)
 async def submit_feedback(
     request: UserFeedbackRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     """Submit user feedback on a recommendation."""
@@ -654,6 +664,11 @@ async def submit_feedback(
         event = result.scalar_one_or_none()
         if not event:
             raise HTTPException(status_code=404, detail="Recommendation event not found")
+
+        # Feedback names a recommendation event, not a user, so the app-wide
+        # ownership dependency cannot see whose it is. Check here: only the
+        # owner of the profile the event belongs to may give feedback on it.
+        await ensure_profile_owner(db, event.user_id, http_request.headers.get(TOKEN_HEADER))
 
         # Find recommended occupation if exists
         result = await db.execute(

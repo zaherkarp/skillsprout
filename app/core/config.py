@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     # was told every origin was allowed.
     cors_allow_origins: str = ""
 
+    # Per-profile ownership (app/core/profile_ownership.py). When true, every
+    # API call that names a user id must carry that profile's owner token in
+    # the X-Profile-Token header. Turn off only for single-user local use or
+    # while migrating old profiles.
+    profile_tokens_required: bool = True
+
     # Database
     database_url: str = "sqlite+aiosqlite:///:memory:"
     database_url_sync: str = "sqlite:///:memory:"

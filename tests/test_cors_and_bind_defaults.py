@@ -38,7 +38,7 @@ def _cors_app(origins: list[str]) -> FastAPI:
         allow_origins=origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
-        allow_headers=["Content-Type", "X-API-Key"],
+        allow_headers=["Content-Type", "X-API-Key", "X-Profile-Token"],
     )
 
     @app.delete("/api/v1/user/{user_id}/data")
