@@ -6,6 +6,12 @@
 <div class="card">
     <h2>Your Career Discovery Journey</h2>
     <p>User ID: <strong>{{ user_id }}</strong></p>
+    <!-- Shown when this browser does not hold the profile's owner token. -->
+    <div id="tokenNotice" class="alert alert-info" style="display: none;">
+        This browser doesn't have the key for profile {{ user_id }}, so it can't load or change it.
+        Profiles are tied to the browser that created them. To use this one here, open the link
+        from the browser that created it, or ask whoever runs this server for a new link.
+    </div>
     <div class="alert alert-info">
         This is a simplified UI flow. For full functionality, use the <a href="/api/v1/docs">API Documentation</a>.
     </div>
@@ -33,8 +39,32 @@
     <div id="recommendationsResults" style="margin-top: 20px;"></div>
 </div>
 
+<script src="/static/js/profile-token.js"></script>
 <script>
+    // user_id is an int path parameter (FastAPI rejects anything else), so it
+    // is safe to place in the script as a number.
     const userId = {{ user_id }};
+
+    // Save a token handed over as /flow/<id>#token=..., then warn if this
+    // browser still has none. Every per-user call below sends the token via
+    // SkillSproutToken.headers().
+    SkillSproutToken.captureFromHash(userId);
+    if (!SkillSproutToken.get(userId)) {
+        document.getElementById('tokenNotice').style.display = 'block';
+    }
+
+    // Turn a failed response into a readable error. A 403 means the owner
+    // token is missing or wrong; show the notice and the server's reason.
+    async function failure(response, fallback) {
+        if (response.status === 403) {
+            document.getElementById('tokenNotice').style.display = 'block';
+            try {
+                const body = await response.json();
+                if (body && body.detail) return new Error(body.detail);
+            } catch (e) { /* fall through */ }
+        }
+        return new Error(fallback);
+    }
     let currentOccupation = null;
     let skills = [];
 
@@ -83,11 +113,11 @@
             // Set current occupation
             const response = await fetch(`/api/v1/user/${userId}/current-occupation`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: SkillSproutToken.headers(userId, { 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ onet_code: code })
             });
 
-            if (!response.ok) throw new Error('Failed to set occupation');
+            if (!response.ok) throw await failure(response, 'Failed to set occupation');
 
             currentOccupation = code;
             alert(`Selected: ${title}`);
@@ -146,11 +176,11 @@
         try {
             const response = await fetch(`/api/v1/user/${userId}/skills/ratings`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: SkillSproutToken.headers(userId, { 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ ratings })
             });
 
-            if (!response.ok) throw new Error('Failed to submit ratings');
+            if (!response.ok) throw await failure(response, 'Failed to submit ratings');
 
             alert('Skills rated successfully!');
             document.getElementById('recommendationsSection').style.display = 'block';
@@ -163,11 +193,11 @@
         try {
             const response = await fetch(`/api/v1/user/${userId}/recommendations`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: SkillSproutToken.headers(userId, { 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ limit_per_bucket: 5 })
             });
 
-            if (!response.ok) throw new Error('Failed to get recommendations');
+            if (!response.ok) throw await failure(response, 'Failed to get recommendations');
 
             const data = await response.json();
             displayRecommendations(data);

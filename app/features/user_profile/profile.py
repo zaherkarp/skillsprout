@@ -24,6 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.profile_ownership import new_owner_token
 from app.db.session import get_db
 from app.models.models import UserProfile as UserProfileRow
 
@@ -153,6 +154,10 @@ class ProfileResponse(BaseModel):
     risk_tolerance: RiskTolerance = RiskTolerance.STANDARD
     created_at: datetime
     updated_at: datetime
+    # Set only in the response that creates the profile, and never again.
+    # Send it as X-Profile-Token on every later call for this profile
+    # (see app/core/profile_ownership.py).
+    owner_token: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -238,17 +243,22 @@ async def create_profile(
         )
 
         now = datetime.utcnow()
+        # Owner token: returned once below, only its hash is stored.
+        token, token_hash = new_owner_token()
         user = UserProfileRow(
             created_at=now,
             updated_at=now,
             metadata_json=metadata,
+            owner_token_hash=token_hash,
         )
         db.add(user)
         await db.commit()
         await db.refresh(user)
 
         logger.info("Created profile for user %d", user.id)
-        return _unpack_profile_response(user)
+        response = _unpack_profile_response(user)
+        response.owner_token = token
+        return response
 
     except Exception as exc:
         logger.error("Error creating profile: %s", exc)

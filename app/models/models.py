@@ -90,6 +90,11 @@ class UserProfile(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     # Optional demographic fields can be added here
     metadata_json = Column(JSON, nullable=True)
+    # SHA-256 hex of the profile's owner token (app/core/profile_ownership.py).
+    # The token itself is returned once at creation and never stored. NULL means
+    # a profile created before owner tokens existed: it stays locked until an
+    # operator issues a token with `python -m app.core.profile_ownership issue`.
+    owner_token_hash = Column(String(64), nullable=True)
 
     # Relationships
     current_occupations = relationship("UserCurrentOccupation", back_populates="user", cascade="all, delete-orphan")

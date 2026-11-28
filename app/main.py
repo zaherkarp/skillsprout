@@ -2,7 +2,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -41,6 +41,7 @@ from app.services.enrichment_api import router as enrichment_router
 
 # -- Authentication middleware --------------------------------------------
 from app.core.auth import APIKeyAuthMiddleware
+from app.core.profile_ownership import TOKEN_HEADER as PROFILE_TOKEN_HEADER, require_profile_owner
 
 # -- Progressive enhancement (various mounting strategies) -----------------
 from app.core.progressive.session_resumption import router as session_router
@@ -52,6 +53,19 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _add_owner_token_column_if_missing(sync_conn) -> None:
+    """SQLite only: add user_profile.owner_token_hash to a pre-existing table."""
+    from sqlalchemy import inspect, text
+
+    columns = {c["name"] for c in inspect(sync_conn).get_columns("user_profile")}
+    if "owner_token_hash" not in columns:
+        sync_conn.execute(text("ALTER TABLE user_profile ADD COLUMN owner_token_hash VARCHAR(64)"))
+        logger.info(
+            "Added user_profile.owner_token_hash; existing profiles are locked until "
+            "an owner token is issued (python -m app.core.profile_ownership unclaimed)"
+        )
 
 
 @asynccontextmanager
@@ -72,6 +86,14 @@ async def lifespan(app: FastAPI):
         if async_engine.url.get_backend_name().startswith("sqlite"):
             async with async_engine.begin() as conn:
                 await conn.run_sync(lambda sync_conn: Base.metadata.create_all(bind=sync_conn))
+                # create_all makes missing tables but never adds a column to an
+                # existing one, so a skillsprout.db from before owner tokens
+                # would lack user_profile.owner_token_hash and every profile
+                # query would fail. Add the column in place. Old rows get NULL,
+                # which keeps them locked until an owner token is issued (see
+                # app/core/profile_ownership.py). Postgres gets the same column
+                # from the Alembic migration instead.
+                await conn.run_sync(_add_owner_token_column_if_missing)
             logger.info("SQLite schema ensured (Base.metadata.create_all)")
     except Exception as e:
         logger.warning(f"Schema bootstrap skipped: {e}")
@@ -107,6 +129,11 @@ app = FastAPI(
     version="1.0.0",
     debug=settings.debug,
     lifespan=lifespan,
+    # Per-profile ownership, checked on every route. Registered app-wide (not
+    # per router) so a new route that takes a user_id is protected without
+    # anyone remembering to add a check; it ignores non-API paths and requests
+    # that name no user. See app/core/profile_ownership.py.
+    dependencies=[Depends(require_profile_owner)],
 )
 
 # Authentication middleware (must be added before CORS so it runs after CORS)
@@ -125,7 +152,7 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", PROFILE_TOKEN_HEADER],
 )
 
 # Mount static files
@@ -171,12 +198,18 @@ app.include_router(enrichment_router, prefix="/api/v1")
 
 # ==================== UI Routes ====================
 
+# Starlette 1.x (pulled in by the pinned FastAPI) takes the request as the
+# first argument of TemplateResponse and no longer accepts the old
+# TemplateResponse(name, {"request": request, ...}) form: every page here
+# answered 500 until this was changed. The request is still available to the
+# templates as `request`.
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Home page."""
     return templates.TemplateResponse(
+        request,
         "pages/index.html",
-        {"request": request, "app_name": settings.app_name, "demo_mode": settings.is_demo_mode},
+        {"app_name": settings.app_name, "demo_mode": settings.is_demo_mode},
     )
 
 
@@ -184,8 +217,9 @@ async def home(request: Request):
 async def user_flow(request: Request, user_id: int):
     """User flow page."""
     return templates.TemplateResponse(
+        request,
         "pages/flow.html",
-        {"request": request, "user_id": user_id, "app_name": settings.app_name},
+        {"user_id": user_id, "app_name": settings.app_name},
     )
 
 
@@ -193,8 +227,9 @@ async def user_flow(request: Request, user_id: int):
 async def docs_page(request: Request):
     """Documentation page."""
     return templates.TemplateResponse(
+        request,
         "pages/docs.html",
-        {"request": request, "app_name": settings.app_name},
+        {"app_name": settings.app_name},
     )
 
 

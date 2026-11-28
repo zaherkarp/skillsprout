@@ -42,10 +42,10 @@ DESIGN DECISIONS:
     recommendation engine is automated decision-making, so we must be
     transparent about it.
 
-  - The endpoint requires the user_id in the path. In a production system
-    with authentication, this would be derived from the auth token. The
-    current implementation assumes the caller is authorized to access the
-    requested user's data.
+  - The endpoint takes the user_id in the path. The caller must also send
+    that profile's owner token (X-Profile-Token); the app-wide dependency in
+    app/core/profile_ownership.py answers 403 before this handler runs
+    otherwise.
 """
 
 import logging
